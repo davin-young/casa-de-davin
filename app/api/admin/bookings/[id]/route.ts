@@ -4,6 +4,7 @@ import { getSession } from '@/lib/session';
 import { db } from '@/db';
 import { bookings } from '@/db/schema';
 import { updateEventStatus } from '@/lib/google-calendar';
+import { sendApprovalEmail, sendDeclineEmail } from '@/lib/email';
 import type { BookingStatus } from '@/types/booking';
 
 interface StatusUpdateRequest {
@@ -74,6 +75,29 @@ export async function PATCH(
         await updateEventStatus(booking.calendarEventId, status);
       } catch (calErr) {
         console.error('Calendar sync failed (non-fatal):', calErr instanceof Error ? calErr.message : calErr);
+      }
+    }
+
+    // Send approval/decline email to guest if they provided an email
+    if (booking.email) {
+      const emailData = {
+        name: booking.name,
+        room: booking.room,
+        arrive: booking.arrive,
+        depart: booking.depart,
+        why: booking.why,
+        travel: booking.travel,
+        activities: booking.activities,
+        ref: booking.ref,
+      };
+      try {
+        if (status === 'approved') {
+          await sendApprovalEmail(emailData, booking.email);
+        } else if (status === 'declined') {
+          await sendDeclineEmail(emailData, booking.email);
+        }
+      } catch (emailErr) {
+        console.error('Guest email failed (non-fatal):', emailErr instanceof Error ? emailErr.message : emailErr);
       }
     }
 

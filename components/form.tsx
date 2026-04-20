@@ -16,6 +16,8 @@ export interface Booking {
   range: DateRange;
   why: string;
   travel: string;
+  activities: string;
+  email: string;
   ref?: string;
 }
 
@@ -76,9 +78,11 @@ interface RoomMeta {
 
 export default function BookingForm({ room, onBack, onSubmit, silly = false }: BookingFormProps) {
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [range, setRange] = useState<DateRange>({ start: null, end: null });
   const [why, setWhy] = useState('');
   const [travel, setTravel] = useState('');
+  const [activities, setActivities] = useState('');
   const [dateWarning, setDateWarning] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -117,6 +121,8 @@ export default function BookingForm({ room, onBack, onSubmit, silly = false }: B
           depart: range.end.toISOString().split('T')[0],
           why: why.trim(),
           travel: travel.trim(),
+          activities: activities.trim(),
+          email: email.trim() || undefined,
         }),
       });
       const data = await res.json() as { ok: boolean; ref?: string; error?: string };
@@ -127,7 +133,7 @@ export default function BookingForm({ room, onBack, onSubmit, silly = false }: B
         return;
       }
 
-      onSubmit({ room, name, range, why, travel, ref: data.ref });
+      onSubmit({ room, name, range, why, travel, activities, email, ref: data.ref });
     } catch {
       setSubmitting(false);
       setDateWarning('Network error. Check your connection and try again.');
@@ -189,6 +195,14 @@ export default function BookingForm({ room, onBack, onSubmit, silly = false }: B
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
             />
 
+            <UnderlineInput
+              label="Email (optional)"
+              placeholder="you@wherever.com"
+              value={email}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+              hint="Only so I can let you know if you're in. I won't spam you. I barely email people I like."
+            />
+
             <div>
               <div style={{
                 fontSize: 12,
@@ -233,6 +247,14 @@ export default function BookingForm({ room, onBack, onSubmit, silly = false }: B
               value={travel}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTravel(e.target.value)}
               hint="Optional. I ask because I'm nosy, not because I'll pick you up."
+            />
+
+            <UnderlineInput
+              label="What would you like to do?"
+              placeholder="Hike, eat tacos, day-drink responsibly, exist on the couch…"
+              value={activities}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setActivities(e.target.value)}
+              hint="Optional. Helps me pretend I'm a good host."
             />
           </div>
 

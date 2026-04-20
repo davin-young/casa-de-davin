@@ -13,6 +13,8 @@ interface BookingRequest {
   depart: string;
   why: string;
   travel: string;
+  activities: string;
+  email?: string;
 }
 
 interface BookingResponse {
@@ -57,7 +59,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<BookingRe
     return NextResponse.json({ ok: false as const, error: 'Invalid request body.' }, { status: 400 });
   }
 
-  const { name, room, arrive, depart, why, travel } = body as BookingRequest;
+  const { name, room, arrive, depart, why, travel, activities, email } = body as BookingRequest;
 
   if (!name || typeof name !== 'string' || name.trim().length === 0) {
     return NextResponse.json({ ok: false as const, error: 'Name is required.' }, { status: 400 });
@@ -78,6 +80,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<BookingRe
   const ref = generateRef();
 
   try {
+    // Validate email if provided
+    const trimmedEmail = email?.trim() || null;
+    if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      return NextResponse.json({ ok: false as const, error: 'Invalid email address.' }, { status: 400 });
+    }
+
     // Insert into database
     const [inserted] = await db.insert(bookings).values({
       ref,
@@ -87,6 +95,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<BookingRe
       depart,
       why: why.trim(),
       travel: (travel || '').trim(),
+      activities: (activities || '').trim(),
+      email: trimmedEmail,
     }).returning({ id: bookings.id });
 
     // Optional: sync to Google Calendar
@@ -98,6 +108,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<BookingRe
         depart,
         why: why.trim(),
         travel: (travel || '').trim(),
+        activities: (activities || '').trim(),
         ref,
       });
       if (calResult) {
@@ -117,6 +128,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<BookingRe
       depart,
       why: why.trim(),
       travel: (travel || '').trim(),
+      activities: (activities || '').trim(),
       ref,
     }).catch((emailErr: Error) => {
       console.error('Email notification failed (non-fatal):', emailErr.message);
