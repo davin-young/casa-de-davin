@@ -1,0 +1,446 @@
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { ArrowLeft, HouseGlyph, CouchGlyph, BedGlyph, CheckIcon, XIcon } from './icons';
+import { PaperSurface, MossButton, SectionLabel, SprigDivider } from './shared';
+
+type BookingStatus = 'pending' | 'approved' | 'declined';
+
+interface BookingRecord {
+  id: string;
+  ref: string;
+  name: string;
+  room: string;
+  arrive: string;
+  depart: string;
+  status: BookingStatus;
+  why: string;
+  travel: string;
+  calendarEventId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface AdminPanelProps {
+  onBack: () => void;
+}
+
+interface StatTileProps {
+  big: number;
+  label: string;
+  accent: string;
+}
+
+interface BookingRowProps {
+  booking: BookingRecord;
+  selected: boolean;
+  onSelect: () => void;
+  last: boolean;
+}
+
+interface StatusPillProps {
+  status: BookingStatus;
+  color: string;
+}
+
+interface BookingDetailProps {
+  booking: BookingRecord;
+  onUpdate: (id: string, status: BookingStatus) => void;
+  onClose: () => void;
+}
+
+interface DetailRowProps {
+  label: string;
+  value: string | number;
+}
+
+interface ActivityItem {
+  when: string;
+  who: string;
+  what: string;
+}
+
+export default function AdminPanel({ onBack }: AdminPanelProps) {
+  const [bookings, setBookings] = useState<BookingRecord[]>([]);
+  const [filter, setFilter] = useState<'all' | BookingStatus>('all');
+  const [selected, setSelected] = useState<BookingRecord | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchBookings = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/bookings');
+      const data = await res.json() as { ok: boolean; bookings?: BookingRecord[]; error?: string };
+      if (data.ok && data.bookings) {
+        setBookings(data.bookings);
+      }
+    } catch {
+      // silently fail — admin can refresh
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchBookings(); }, [fetchBookings]);
+
+  const filtered = filter === 'all' ? bookings : bookings.filter(b => b.status === filter);
+  const counts: Record<'all' | BookingStatus, number> = {
+    all: bookings.length,
+    pending: bookings.filter(b => b.status === 'pending').length,
+    approved: bookings.filter(b => b.status === 'approved').length,
+    declined: bookings.filter(b => b.status === 'declined').length,
+  };
+
+  const updateStatus = async (id: string, status: BookingStatus) => {
+    try {
+      const res = await fetch(`/api/admin/bookings/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      if (res.ok) {
+        setBookings(bs => bs.map(b => b.id === id ? { ...b, status } : b));
+        if (selected?.id === id) setSelected({ ...selected, status });
+      }
+    } catch {
+      // silently fail
+    }
+  };
+
+  return (
+    <PaperSurface style={{ minHeight: '100%', paddingBottom: 60 }}>
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        padding: '22px 40px 10px',
+        maxWidth: 1240, margin: '0 auto',
+      }}>
+        <button onClick={onBack} style={{
+          background: 'transparent', border: 'none', color: 'var(--umber)',
+          fontFamily: 'var(--sans)', fontSize: 14, display: 'inline-flex',
+          alignItems: 'center', gap: 6, cursor: 'pointer', padding: '6px 10px 6px 2px',
+        }}>
+          <ArrowLeft size={16}/> back to the house
+        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <HouseGlyph size={22}/>
+          <span className="serif-display" style={{ fontSize: 16, fontWeight: 600 }}>Casa de Davin</span>
+          <span style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+            padding: '3px 8px', marginLeft: 8,
+            background: 'var(--umber)', color: 'var(--oat)',
+            borderRadius: '6px 2px 6px 2px',
+          }}>admin</span>
+        </div>
+      </div>
+
+      <div style={{ maxWidth: 1240, margin: '0 auto', padding: '16px 40px 24px' }}>
+        <SectionLabel>Host dashboard</SectionLabel>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 20, flexWrap: 'wrap', marginTop: 10 }}>
+          <h1 className="serif-display" style={{ fontSize: 56, lineHeight: 1, margin: 0, letterSpacing: '-0.02em' }}>
+            Who&apos;s begging<br/>
+            <span style={{ fontStyle: 'italic', color: 'var(--umber)' }}>to stay?</span>
+          </h1>
+          <div style={{ display: 'flex', gap: 14 }}>
+            <StatTile big={counts.pending} label="pending" accent="var(--honey)"/>
+            <StatTile big={counts.approved} label="approved" accent="var(--moss)"/>
+            <StatTile big={counts.declined} label="declined" accent="var(--terracotta-deep)"/>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 40px', display: 'grid', gridTemplateColumns: '1fr 420px', gap: 32, alignItems: 'flex-start' }}>
+        <div>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 18, alignItems: 'center' }}>
+            {(['all', 'pending', 'approved', 'declined'] as const).map(f => (
+              <button key={f} onClick={() => setFilter(f)}
+                style={{
+                  padding: '7px 14px',
+                  fontSize: 13,
+                  fontFamily: 'var(--sans)',
+                  fontWeight: 500,
+                  textTransform: 'capitalize',
+                  background: filter === f ? 'var(--moss)' : 'transparent',
+                  color: filter === f ? 'var(--oat)' : 'var(--ink)',
+                  border: filter === f ? '1.5px solid var(--moss-dark)' : '1.5px dashed var(--umber-soft)',
+                  borderRadius: '10px 4px 10px 4px',
+                  cursor: 'pointer',
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                }}>
+                {f} <span style={{ opacity: 0.7, fontSize: 11 }}>{counts[f]}</span>
+              </button>
+            ))}
+            <span className="hand" style={{ marginLeft: 'auto', fontSize: 20, color: 'var(--umber-soft)' }}>
+              {counts.pending > 0 ? `${counts.pending} want your attention →` : 'nothing pending. nap?'}
+            </span>
+          </div>
+
+          <div style={{
+            background: 'var(--linen)',
+            border: '1.5px solid var(--umber-soft)',
+            borderRadius: '16px 6px 16px 6px',
+            overflow: 'hidden',
+          }}>
+            {filtered.length === 0 && (
+              <div style={{ padding: '32px', textAlign: 'center', color: 'var(--ink-soft)', fontStyle: 'italic', fontFamily: 'var(--serif)' }}>
+                Nothing here. Suspicious.
+              </div>
+            )}
+            {filtered.map((b, i) => (
+              <BookingRow key={b.id} booking={b} selected={selected?.id === b.id} onSelect={() => setSelected(b)} last={i === filtered.length - 1}/>
+            ))}
+          </div>
+        </div>
+
+        <aside style={{ position: 'sticky', top: 20 }}>
+          {selected ? (
+            <BookingDetail booking={selected} onUpdate={updateStatus} onClose={() => setSelected(null)}/>
+          ) : (
+            <EmptyDetail/>
+          )}
+        </aside>
+      </div>
+
+      <div style={{ maxWidth: 1240, margin: '36px auto 0', padding: '0 40px' }}>
+        <ActivityStrip/>
+      </div>
+    </PaperSurface>
+  );
+}
+
+function StatTile({ big, label, accent }: StatTileProps) {
+  return (
+    <div style={{
+      padding: '12px 18px',
+      background: 'var(--linen)',
+      border: '1.5px solid var(--umber-soft)',
+      borderRadius: '12px 4px 12px 4px',
+      minWidth: 100,
+      textAlign: 'left',
+      position: 'relative',
+    }}>
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: accent, borderRadius: '10px 4px 0 0' }}/>
+      <div className="serif-display" style={{ fontSize: 38, fontWeight: 600, color: 'var(--ink)', lineHeight: 1 }}>{big}</div>
+      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.16em', color: 'var(--umber)', fontWeight: 600, marginTop: 4 }}>{label}</div>
+    </div>
+  );
+}
+
+function BookingRow({ booking, selected, onSelect, last }: BookingRowProps) {
+  const statusColor: Record<BookingStatus, string> = {
+    pending: 'var(--honey)',
+    approved: 'var(--moss)',
+    declined: 'var(--terracotta-deep)',
+  };
+
+  return (
+    <div onClick={onSelect} style={{
+      padding: '16px 20px',
+      borderBottom: last ? 'none' : '1px dashed var(--umber-soft)',
+      background: selected ? 'rgba(228,169,75,0.18)' : 'transparent',
+      cursor: 'pointer',
+      display: 'grid',
+      gridTemplateColumns: '1.2fr 1fr 0.8fr 0.6fr auto',
+      gap: 14,
+      alignItems: 'center',
+      transition: 'background 160ms ease',
+    }}>
+      <div>
+        <div style={{ fontFamily: 'var(--serif)', fontSize: 18, fontWeight: 500, color: 'var(--ink)' }}>{booking.name}</div>
+        <div style={{ fontSize: 11, color: 'var(--ink-soft)', fontStyle: 'italic', marginTop: 2 }}>submitted {formatRelative(booking.createdAt)}</div>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {booking.room === 'couch' ? <CouchGlyph size={28}/> : <BedGlyph size={28}/>}
+        <span style={{ fontSize: 13, color: 'var(--ink)' }}>
+          {booking.room === 'couch' ? 'The Couch' : 'The Bedroom'}
+        </span>
+      </div>
+      <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--ink)' }}>
+        {fmtShort(booking.arrive)} → {fmtShort(booking.depart)}
+      </div>
+      <div style={{ fontSize: 12, color: 'var(--ink-soft)' }}>
+        {nightsBetween(booking.arrive, booking.depart)} nights
+      </div>
+      <StatusPill status={booking.status} color={statusColor[booking.status]}/>
+    </div>
+  );
+}
+
+function StatusPill({ status, color }: StatusPillProps) {
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 6,
+      padding: '4px 10px',
+      background: color,
+      color: status === 'pending' ? 'var(--ink)' : 'var(--oat)',
+      borderRadius: '8px 3px 8px 3px',
+      fontSize: 10, fontWeight: 700,
+      letterSpacing: '0.14em',
+      textTransform: 'uppercase',
+    }}>{status}</span>
+  );
+}
+
+function BookingDetail({ booking, onUpdate, onClose }: BookingDetailProps) {
+  return (
+    <div style={{
+      background: 'var(--linen)',
+      border: '1.5px solid var(--umber-soft)',
+      borderRadius: '20px 6px 20px 6px',
+      padding: '24px 26px 28px',
+      boxShadow: 'var(--shadow-soft)',
+      position: 'relative',
+    }}>
+      <button onClick={onClose} style={{
+        position: 'absolute', top: 14, right: 14,
+        background: 'transparent', border: 'none', cursor: 'pointer',
+        color: 'var(--umber)', padding: 4,
+      }}><XIcon size={16}/></button>
+
+      <SectionLabel>Request detail</SectionLabel>
+      <h2 className="serif-display" style={{ fontSize: 32, margin: '10px 0 4px', letterSpacing: '-0.01em', fontWeight: 500 }}>
+        {booking.name}
+      </h2>
+      <div style={{ fontSize: 12, color: 'var(--ink-soft)', fontStyle: 'italic', marginBottom: 18 }}>
+        requested {formatRelative(booking.createdAt)}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 20px', marginBottom: 18 }}>
+        <DetailRow label="Room" value={booking.room === 'couch' ? 'The Couch' : 'The Bedroom'}/>
+        <DetailRow label="Nights" value={nightsBetween(booking.arrive, booking.depart)}/>
+        <DetailRow label="Arrives" value={fmtShort(booking.arrive)}/>
+        <DetailRow label="Departs" value={fmtShort(booking.depart)}/>
+      </div>
+
+      <SprigDivider/>
+
+      <div style={{ marginTop: 16 }}>
+        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--umber)', marginBottom: 6 }}>
+          Why should I let them stay
+        </div>
+        <div style={{
+          padding: '12px 14px',
+          background: 'rgba(242,234,216,0.6)',
+          border: '1px dashed var(--umber-soft)',
+          borderRadius: '10px 4px 10px 4px',
+          fontFamily: 'var(--serif)',
+          fontSize: 15,
+          color: 'var(--ink)',
+          fontStyle: 'italic',
+          lineHeight: 1.5,
+        }}>&quot;{booking.why}&quot;</div>
+      </div>
+
+      {booking.travel && (
+        <div style={{ marginTop: 14 }}>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--umber)', marginBottom: 4 }}>Getting here</div>
+          <div style={{ fontSize: 14, color: 'var(--ink)', fontFamily: 'var(--serif)' }}>{booking.travel}</div>
+        </div>
+      )}
+
+      <SprigDivider/>
+
+      <div style={{ display: 'flex', gap: 8, marginTop: 18, flexWrap: 'wrap' }}>
+        {booking.status !== 'approved' && (
+          <MossButton onClick={() => onUpdate(booking.id, 'approved')} size="sm">
+            <CheckIcon size={14}/> Approve
+          </MossButton>
+        )}
+        {booking.status !== 'declined' && (
+          <MossButton onClick={() => onUpdate(booking.id, 'declined')} variant="secondary" size="sm">
+            Kindly decline
+          </MossButton>
+        )}
+        {booking.status !== 'pending' && (
+          <MossButton onClick={() => onUpdate(booking.id, 'pending')} variant="ghost" size="sm">
+            Reset to pending
+          </MossButton>
+        )}
+      </div>
+
+      <div style={{ marginTop: 14, fontSize: 11, color: 'var(--ink-soft)', fontStyle: 'italic', opacity: 0.75 }}>
+        Approving sends them an email. Declining sends a kinder one. Either way, I&apos;ll probably still text.
+      </div>
+    </div>
+  );
+}
+
+function DetailRow({ label, value }: DetailRowProps) {
+  return (
+    <div>
+      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--umber)', marginBottom: 3 }}>{label}</div>
+      <div style={{ fontFamily: 'var(--serif)', fontSize: 16, color: 'var(--ink)' }}>{value}</div>
+    </div>
+  );
+}
+
+function EmptyDetail() {
+  return (
+    <div style={{
+      background: 'rgba(232,223,196,0.5)',
+      border: '1.5px dashed var(--umber-soft)',
+      borderRadius: '20px 6px 20px 6px',
+      padding: '40px 28px',
+      textAlign: 'center',
+      color: 'var(--ink-soft)',
+    }}>
+      <div className="serif-display" style={{ fontSize: 22, margin: '10px 0 4px', color: 'var(--ink)', fontWeight: 500 }}>
+        Pick a request
+      </div>
+      <div style={{ fontSize: 13, fontStyle: 'italic' }}>
+        Tap anyone on the left. I&apos;ll show you their whole plea.
+      </div>
+    </div>
+  );
+}
+
+function ActivityStrip() {
+  const items: ActivityItem[] = [
+    { when: '2m ago', who: 'Kevin', what: 'submitted a request for the bedroom' },
+    { when: '1h ago', who: 'Priya', what: 'submitted a request for the couch' },
+    { when: 'yesterday', who: 'you', what: 'approved Marcus (bedroom · Jul 3–5)' },
+    { when: '3 days ago', who: 'you', what: 'approved Sana (couch · Jul 11–13)' },
+    { when: '5 days ago', who: 'you', what: 'declined Leo (vibes insufficient)' },
+  ];
+  return (
+    <section style={{
+      padding: '20px 26px',
+      background: 'rgba(232,223,196,0.4)',
+      border: '1px dashed var(--umber-soft)',
+      borderRadius: '14px 6px 14px 6px',
+    }}>
+      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--umber)', marginBottom: 12 }}>Recent activity</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {items.map((it, i) => (
+          <div key={i} style={{ display: 'flex', gap: 16, fontSize: 13, color: 'var(--ink)', alignItems: 'baseline' }}>
+            <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-soft)', minWidth: 80 }}>{it.when}</span>
+            <span style={{ fontWeight: 500 }}>{it.who}</span>
+            <span style={{ color: 'var(--ink-soft)' }}>{it.what}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function formatRelative(iso: string): string {
+  const now = Date.now();
+  const then = new Date(iso).getTime();
+  const diffMs = now - then;
+  const diffMin = Math.floor(diffMs / 60_000);
+  const diffHr = Math.floor(diffMs / 3_600_000);
+  const diffDay = Math.floor(diffMs / 86_400_000);
+  if (diffMin < 1) return 'just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffHr < 24) return `${diffHr}h ago`;
+  if (diffDay === 1) return 'yesterday';
+  return `${diffDay} days ago`;
+}
+
+function fmtShort(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function nightsBetween(a: string, b: string): number {
+  return Math.round((new Date(b).getTime() - new Date(a).getTime()) / 86400000);
+}
