@@ -370,6 +370,10 @@ export default function AdminPanel({ onBack, adminEmail }: AdminPanelProps) {
       </div>
 
       <div style={{ maxWidth: 1240, margin: '36px auto 0', padding: '0 40px' }}>
+        <GuestbookAdmin />
+      </div>
+
+      <div style={{ maxWidth: 1240, margin: '36px auto 0', padding: '0 40px' }}>
         <ActivityStrip bookings={bookings}/>
       </div>
     </PaperSurface>
@@ -1216,6 +1220,147 @@ const dateInputStyle: React.CSSProperties = {
   color: 'var(--ink)',
   outline: 'none',
 };
+
+interface GuestbookAdminEntry {
+  id: string;
+  bookingRef: string;
+  guestName: string;
+  room: string;
+  rating: number;
+  title: string;
+  body: string;
+  signoff: string;
+  imageUrls: string[];
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+}
+
+function GuestbookAdmin() {
+  const [entries, setEntries] = useState<GuestbookAdminEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchEntries = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/guestbook');
+      const data = await res.json() as { ok: boolean; entries?: GuestbookAdminEntry[] };
+      if (data.ok && data.entries) setEntries(data.entries);
+    } catch {}
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { fetchEntries(); }, [fetchEntries]);
+
+  const updateStatus = async (id: string, status: 'approved' | 'rejected') => {
+    try {
+      const res = await fetch(`/api/admin/guestbook/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      if (res.ok) setEntries(prev => prev.map(e => e.id === id ? { ...e, status } : e));
+    } catch {}
+  };
+
+  const deleteEntry = async (id: string) => {
+    try {
+      const res = await fetch(`/api/admin/guestbook/${id}`, { method: 'DELETE' });
+      if (res.ok) setEntries(prev => prev.filter(e => e.id !== id));
+    } catch {}
+  };
+
+  const pending = entries.filter(e => e.status === 'pending');
+  const approved = entries.filter(e => e.status === 'approved');
+  const rejected = entries.filter(e => e.status === 'rejected');
+
+  return (
+    <section style={{
+      padding: '24px 26px',
+      background: 'var(--linen)',
+      border: '1.5px solid var(--umber-soft)',
+      borderRadius: '16px 6px 16px 6px',
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+        <div>
+          <SectionLabel>Guestbook reviews</SectionLabel>
+          <div style={{ fontSize: 13, color: 'var(--ink-soft)', fontStyle: 'italic', fontFamily: 'var(--serif)', marginTop: 2 }}>
+            Moderate guest reviews before they appear publicly.
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <StatTile big={pending.length} label="pending" accent="var(--honey)" />
+          <StatTile big={approved.length} label="approved" accent="var(--moss)" />
+        </div>
+      </div>
+
+      {loading ? (
+        <div style={{ padding: 20, textAlign: 'center', fontStyle: 'italic', color: 'var(--ink-soft)', fontFamily: 'var(--serif)' }}>Loading...</div>
+      ) : entries.length === 0 ? (
+        <div style={{ padding: 20, textAlign: 'center', fontStyle: 'italic', color: 'var(--ink-soft)', fontFamily: 'var(--serif)' }}>No reviews submitted yet.</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {entries.map(e => (
+            <div key={e.id} style={{
+              padding: '14px 16px',
+              background: e.status === 'pending' ? 'rgba(228,169,75,0.08)' : e.status === 'rejected' ? 'rgba(201,123,94,0.06)' : 'rgba(90,125,58,0.06)',
+              border: '1px dashed var(--umber-soft)',
+              borderRadius: '10px 4px 10px 4px',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <div>
+                  <span style={{ fontFamily: 'var(--serif)', fontSize: 16, fontWeight: 500, color: 'var(--ink)' }}>
+                    {e.guestName}
+                  </span>
+                  <span style={{ fontSize: 11, color: 'var(--ink-soft)', marginLeft: 8 }}>
+                    {e.bookingRef} &middot; {e.room} &middot; {e.rating}/5
+                  </span>
+                </div>
+                <span style={{
+                  fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase',
+                  padding: '3px 8px', borderRadius: '4px 2px 4px 2px',
+                  background: e.status === 'pending' ? 'var(--honey)' : e.status === 'approved' ? 'var(--moss)' : 'var(--terracotta)',
+                  color: e.status === 'pending' ? 'var(--ink)' : 'var(--oat)',
+                }}>{e.status}</span>
+              </div>
+
+              <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 500, color: 'var(--ink)', marginBottom: 4 }}>
+                &quot;{e.title}&quot;
+              </div>
+              <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--ink-soft)', lineHeight: 1.5, marginBottom: 8 }}>
+                {e.body}
+              </div>
+
+              {e.imageUrls.length > 0 && (
+                <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
+                  {e.imageUrls.map((url, i) => (
+                    <img key={i} src={url} alt="" style={{
+                      width: 60, height: 60, objectFit: 'cover',
+                      borderRadius: '6px 2px 6px 2px',
+                      border: '1px solid var(--umber-soft)',
+                    }} />
+                  ))}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: 8 }}>
+                {e.status !== 'approved' && (
+                  <MossButton onClick={() => updateStatus(e.id, 'approved')} size="sm">Approve</MossButton>
+                )}
+                {e.status !== 'rejected' && (
+                  <MossButton onClick={() => updateStatus(e.id, 'rejected')} variant="secondary" size="sm">Reject</MossButton>
+                )}
+                <button onClick={() => deleteEntry(e.id)} style={{
+                  background: 'transparent', border: 'none', color: 'var(--terracotta)',
+                  fontSize: 11, fontFamily: 'var(--serif)', fontStyle: 'italic', cursor: 'pointer',
+                  textDecoration: 'underline', textUnderlineOffset: 3,
+                }}>Delete</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
 
 function ActivityStrip({ bookings }: { bookings: BookingRecord[] }) {
   // Derive activity from bookings, sorted by most recent update

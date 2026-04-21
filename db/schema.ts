@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, pgEnum, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, uuid, pgEnum, boolean, integer } from 'drizzle-orm/pg-core';
 
 export const roomEnum = pgEnum('room', ['couch', 'bedroom']);
 export const statusEnum = pgEnum('booking_status', ['pending', 'approved', 'declined']);
@@ -18,6 +18,22 @@ export const blackoutDates = pgTable('blackout_dates', {
   endDate: text('end_date').notNull(),
   label: text('label').notNull(),
   room: roomEnum('room'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const guestbookStatusEnum = pgEnum('guestbook_status', ['pending', 'approved', 'rejected']);
+
+export const guestbookEntries = pgTable('guestbook_entries', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  bookingRef: text('booking_ref').notNull(),
+  guestName: text('guest_name').notNull(),
+  room: roomEnum('room').notNull(),
+  rating: integer('rating').notNull(),
+  title: text('title').notNull(),
+  body: text('body').notNull(),
+  signoff: text('signoff').notNull().default(''),
+  imageUrls: text('image_urls').notNull().default('[]'),
+  status: guestbookStatusEnum('status').notNull().default('pending'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 

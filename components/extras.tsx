@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, ArrowRight, HouseGlyph, XIcon, Sprout } from './icons';
 import { PaperSurface, MossButton, SectionLabel, SprigDivider, SunRating } from './shared';
 
@@ -54,16 +54,7 @@ interface GuestGateProps {
   room: string | null;
 }
 
-interface GuestbookEntry {
-  name: string;
-  date: string;
-  room: string;
-  rating: number;
-  title: string;
-  body: string;
-  signoff: string;
-  rot: number;
-}
+// GuestbookEntry now fetched from API (see GuestbookApiEntry)
 
 interface EmailTemplate {
   subject: string;
@@ -87,9 +78,7 @@ interface FactBlockProps {
   sub: string;
 }
 
-interface GuestCardProps {
-  entry: GuestbookEntry;
-}
+// GuestCardProps inlined in the new GuestCard component
 
 interface EmailCardProps {
   template: EmailTemplate;
@@ -401,18 +390,35 @@ function FactBlock({ title, big, sub }: FactBlockProps) {
   );
 }
 
-const GUESTBOOK_ENTRIES: GuestbookEntry[] = [
-  { name: 'Kevin A.', date: 'Sept 2025', room: 'couch', rating: 4, title: 'Surprisingly not bad for a couch.', body: 'Davin made pancakes on Sunday and they were legitimately very good. I slept like a rock despite the aforementioned couch. Cushions are, as advertised, of varying firmness. Gary (the starter) is thriving.', signoff: 'Will stay again. Possibly next month.', rot: -1.2 },
-  { name: 'Priya R.', date: 'Aug 2025', room: 'bedroom', rating: 5, title: "The bedroom is real. I'm shocked.", body: "Real bed. Real pillow. Locks. Davin humming while he cooks is either charming or concerning, I haven't decided. Either way, 10/10 slumber.", signoff: 'The tea collection is stupid good.', rot: 1.4 },
-  { name: 'Marcus W.', date: 'July 2025', room: 'bedroom', rating: 4, title: 'Hiked a lot. Was fed a lot.', body: 'I came for the mountains and stayed for the oat milk lattes. Davin is a generous host with strong opinions about pillow firmness. I agree with most of them.', signoff: 'Francine the plant is judging you.', rot: -0.8 },
-  { name: 'Sana I.', date: 'June 2025', room: 'couch', rating: 5, title: 'I brought a weirdly specific compliment. I was rewarded.', body: "Showed up and told Davin his shelf arrangement was 'emotionally correct.' Was immediately upgraded (spiritually, not literally) to preferred guest. House is small and warm in the right way.", signoff: 'Bring flattery. Always bring flattery.', rot: 1.1 },
-  { name: 'Leo P.', date: 'May 2025', room: 'couch', rating: 3, title: 'I was told to behave. I did not.', body: "I will not go into it. Davin will not let me return. We're still friends, I think. Mostly. The couch is comfortable if you deserve it.", signoff: 'A cautionary tale.', rot: 0.5 },
-  { name: 'Zoe K.', date: 'Apr 2025', room: 'bedroom', rating: 5, title: 'Best two nights of the conference.', body: 'Bedroom window looks out at another window, as promised. That window has a very serious pigeon in it sometimes. The pigeon was the highlight of my trip. Sorry, Davin.', signoff: 'Watch for the window pigeon. Trust me.', rot: -1.6 },
-];
+interface GuestbookApiEntry {
+  id: string;
+  guestName: string;
+  room: string;
+  rating: number;
+  title: string;
+  body: string;
+  signoff: string;
+  imageUrls: string[];
+  createdAt: string;
+}
 
 export function Guestbook({ onBack }: GuestbookProps) {
   const [filter, setFilter] = useState<string>('all');
-  const filtered = filter === 'all' ? GUESTBOOK_ENTRIES : GUESTBOOK_ENTRIES.filter(e => e.room === filter);
+  const [entries, setEntries] = useState<GuestbookApiEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/guestbook')
+      .then(r => r.json())
+      .then((data: { ok: boolean; entries?: GuestbookApiEntry[] }) => {
+        if (data.ok && data.entries) setEntries(data.entries);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = filter === 'all' ? entries : entries.filter(e => e.room === filter);
 
   return (
     <PaperSurface style={{ minHeight: '100%', paddingBottom: 60 }}>
@@ -430,8 +436,8 @@ export function Guestbook({ onBack }: GuestbookProps) {
         <SectionLabel>The guestbook</SectionLabel>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 20, flexWrap: 'wrap', marginTop: 10, marginBottom: 26 }}>
           <h1 className="serif-display" style={{ fontSize: 76, lineHeight: 0.96, margin: 0, letterSpacing: '-0.03em', fontWeight: 500 }}>
-            What the last<br/>
-            <span style={{ fontStyle: 'italic', color: 'var(--umber)' }}>six said.</span>
+            What guests<br/>
+            <span style={{ fontStyle: 'italic', color: 'var(--umber)' }}>actually said.</span>
           </h1>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
             <div style={{ display: 'flex', gap: 6 }}>
@@ -450,21 +456,262 @@ export function Guestbook({ onBack }: GuestbookProps) {
                   }}>{f}</button>
               ))}
             </div>
-            <span className="hand" style={{ fontSize: 20, color: 'var(--umber-soft)' }}>real people &middot; mostly honest</span>
+            <MossButton onClick={() => setShowForm(!showForm)} variant="secondary" size="sm">
+              {showForm ? 'Close form' : 'Leave a review'}
+            </MossButton>
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '30px 24px' }}>
-          {filtered.map((e, i) => (
-            <GuestCard key={i} entry={e}/>
-          ))}
-        </div>
+        {showForm && (
+          <ReviewForm onSubmitted={() => {
+            setShowForm(false);
+            // Re-fetch after submission (will show after admin approves)
+            fetch('/api/guestbook')
+              .then(r => r.json())
+              .then((data: { ok: boolean; entries?: GuestbookApiEntry[] }) => {
+                if (data.ok && data.entries) setEntries(data.entries);
+              })
+              .catch(() => {});
+          }} />
+        )}
+
+        {loading ? (
+          <div style={{ padding: 40, textAlign: 'center', fontFamily: 'var(--serif)', fontStyle: 'italic', color: 'var(--ink-soft)' }}>
+            Loading...
+          </div>
+        ) : filtered.length === 0 ? (
+          <div style={{ padding: 40, textAlign: 'center', fontFamily: 'var(--serif)', fontStyle: 'italic', color: 'var(--ink-soft)' }}>
+            {entries.length === 0
+              ? 'No reviews yet. Be the first — if you dare.'
+              : 'Nothing for this filter.'}
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '30px 24px' }}>
+            {filtered.map((e, i) => (
+              <GuestCard key={e.id} entry={e} rot={ROTS[i % ROTS.length]}/>
+            ))}
+          </div>
+        )}
       </div>
     </PaperSurface>
   );
 }
 
-function GuestCard({ entry }: GuestCardProps) {
+const ROTS = [-1.2, 1.4, -0.8, 1.1, 0.5, -1.6, 0.9, -0.4];
+
+function ReviewForm({ onSubmitted }: { onSubmitted: () => void }) {
+  const [ref, setRef] = useState('');
+  const [rating, setRating] = useState(5);
+  const [title, setTitle] = useState('');
+  const [body, setBody] = useState('');
+  const [signoff, setSignoff] = useState('');
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotos = (files: FileList | null) => {
+    if (!files) return;
+    const arr = Array.from(files).slice(0, 4);
+    setPhotos(arr);
+    setPreviews(arr.map(f => URL.createObjectURL(f)));
+  };
+
+  const removePhoto = (idx: number) => {
+    setPhotos(p => p.filter((_, i) => i !== idx));
+    setPreviews(p => { URL.revokeObjectURL(p[idx]); return p.filter((_, i) => i !== idx); });
+  };
+
+  const submit = async () => {
+    if (!ref.trim() || !title.trim() || !body.trim()) {
+      setError('Booking ref, title, and review are required.');
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+
+    const fd = new FormData();
+    fd.append('bookingRef', ref.trim().toUpperCase());
+    fd.append('rating', String(rating));
+    fd.append('title', title.trim());
+    fd.append('body', body.trim());
+    fd.append('signoff', signoff.trim());
+    for (const photo of photos) {
+      fd.append('photos', photo);
+    }
+
+    try {
+      const res = await fetch('/api/guestbook', { method: 'POST', body: fd });
+      const data = await res.json() as { ok: boolean; error?: string };
+      if (!res.ok || !data.ok) {
+        setError(data.error || 'Something went wrong.');
+        setSubmitting(false);
+        return;
+      }
+      setSuccess(true);
+      setTimeout(onSubmitted, 2000);
+    } catch {
+      setError('Network error.');
+      setSubmitting(false);
+    }
+  };
+
+  if (success) {
+    return (
+      <div style={{
+        marginBottom: 30, padding: '24px 28px',
+        background: 'rgba(90,125,58,0.08)',
+        border: '1.5px dashed var(--moss)',
+        borderRadius: '16px 6px 16px 6px',
+        textAlign: 'center',
+      }}>
+        <div className="serif-display" style={{ fontSize: 24, color: 'var(--moss)', marginBottom: 6 }}>Review submitted!</div>
+        <div style={{ fontFamily: 'var(--serif)', fontSize: 14, color: 'var(--ink-soft)', fontStyle: 'italic' }}>
+          It&apos;ll show up once Davin reads it and pretends he wasn&apos;t moved.
+        </div>
+      </div>
+    );
+  }
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '10px 14px',
+    fontSize: 14,
+    fontFamily: 'var(--sans)',
+    background: 'rgba(242,234,216,0.6)',
+    border: '1.5px dashed var(--umber-soft)',
+    borderRadius: '10px 4px 10px 4px',
+    color: 'var(--ink)',
+    outline: 'none',
+  };
+
+  return (
+    <div style={{
+      marginBottom: 30, padding: '24px 28px',
+      background: 'var(--linen)',
+      border: '1.5px solid var(--umber-soft)',
+      borderRadius: '16px 6px 16px 6px',
+    }}>
+      <SectionLabel>Leave a review</SectionLabel>
+      <p style={{ fontFamily: 'var(--serif)', fontSize: 14, color: 'var(--ink-soft)', fontStyle: 'italic', margin: '4px 0 18px' }}>
+        You&apos;ll need your booking ref (CDD-XXXXX) from your confirmation. Only approved guests can review.
+      </p>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+        <div>
+          <label style={labelStyle}>Booking ref</label>
+          <input value={ref} onChange={e => setRef(e.target.value)} placeholder="CDD-12345" style={inputStyle} />
+        </div>
+        <div>
+          <label style={labelStyle}>Rating</label>
+          <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+            {[1, 2, 3, 4, 5].map(n => (
+              <button key={n} onClick={() => setRating(n)} style={{
+                width: 36, height: 36,
+                borderRadius: '8px 3px 8px 3px',
+                border: rating >= n ? '1.5px solid var(--honey)' : '1.5px dashed var(--umber-soft)',
+                background: rating >= n ? 'var(--honey)' : 'transparent',
+                color: rating >= n ? 'var(--oat)' : 'var(--ink-soft)',
+                fontSize: 16, fontWeight: 600,
+                cursor: 'pointer',
+              }}>{n}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 14 }}>
+        <label style={labelStyle}>Title</label>
+        <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Sum it up in a sentence" style={inputStyle} />
+      </div>
+
+      <div style={{ marginBottom: 14 }}>
+        <label style={labelStyle}>Your review</label>
+        <textarea value={body} onChange={e => setBody(e.target.value)} placeholder="Be honest. Or at least entertainingly dishonest." rows={4}
+          style={{ ...inputStyle, resize: 'vertical', fontFamily: 'var(--serif)' }} />
+      </div>
+
+      <div style={{ marginBottom: 14 }}>
+        <label style={labelStyle}>Sign-off (optional)</label>
+        <input value={signoff} onChange={e => setSignoff(e.target.value)} placeholder="e.g. Would come back. Probably." style={inputStyle} />
+      </div>
+
+      {/* Photo upload */}
+      <div style={{ marginBottom: 18 }}>
+        <label style={labelStyle}>Photos (optional, up to 4)</label>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={e => handlePhotos(e.target.files)}
+          style={{ display: 'none' }}
+        />
+        <div style={{ display: 'flex', gap: 10, marginTop: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+          {previews.map((src, i) => (
+            <div key={i} style={{ position: 'relative', width: 72, height: 72 }}>
+              <img src={src} alt="" style={{
+                width: 72, height: 72, objectFit: 'cover',
+                borderRadius: '8px 3px 8px 3px',
+                border: '1.5px solid var(--umber-soft)',
+              }} />
+              <button onClick={() => removePhoto(i)} style={{
+                position: 'absolute', top: -6, right: -6,
+                width: 20, height: 20,
+                borderRadius: 10,
+                background: 'var(--terracotta)',
+                color: 'var(--oat)',
+                border: 'none',
+                fontSize: 11,
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>×</button>
+            </div>
+          ))}
+          {photos.length < 4 && (
+            <button onClick={() => fileRef.current?.click()} style={{
+              width: 72, height: 72,
+              borderRadius: '8px 3px 8px 3px',
+              border: '1.5px dashed var(--umber-soft)',
+              background: 'rgba(242,234,216,0.5)',
+              color: 'var(--umber)',
+              fontSize: 24,
+              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>+</button>
+          )}
+        </div>
+      </div>
+
+      {error && (
+        <div style={{ marginBottom: 14, padding: '10px 14px', background: 'rgba(201,123,94,0.12)', border: '1px dashed var(--terracotta)', borderRadius: '8px 3px 8px 3px', fontSize: 13, color: 'var(--terracotta)' }}>
+          {error}
+        </div>
+      )}
+
+      <MossButton onClick={submit} disabled={submitting} size="md">
+        {submitting ? 'Submitting...' : 'Submit review'}
+      </MossButton>
+    </div>
+  );
+}
+
+const labelStyle: React.CSSProperties = {
+  display: 'block',
+  fontSize: 10,
+  fontWeight: 600,
+  letterSpacing: '0.14em',
+  textTransform: 'uppercase',
+  color: 'var(--umber)',
+  marginBottom: 4,
+};
+
+function GuestCard({ entry, rot }: { entry: GuestbookApiEntry; rot: number }) {
+  const dateFmt = new Date(entry.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+
   return (
     <div style={{
       background: 'var(--linen)',
@@ -472,7 +719,7 @@ function GuestCard({ entry }: GuestCardProps) {
       borderRadius: '16px 6px 16px 6px',
       padding: '20px 22px 22px',
       position: 'relative',
-      transform: `rotate(${entry.rot}deg)`,
+      transform: `rotate(${rot}deg)`,
       boxShadow: 'var(--shadow-soft)',
     }}>
       <div style={{
@@ -503,12 +750,25 @@ function GuestCard({ entry }: GuestCardProps) {
         {entry.body}
       </p>
 
+      {/* Photos */}
+      {entry.imageUrls.length > 0 && (
+        <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+          {entry.imageUrls.map((url, i) => (
+            <img key={i} src={url} alt={`Photo by ${entry.guestName}`} style={{
+              width: 80, height: 80, objectFit: 'cover',
+              borderRadius: '8px 3px 8px 3px',
+              border: '1px solid var(--umber-soft)',
+            }} />
+          ))}
+        </div>
+      )}
+
       <div style={{ borderTop: '1px dashed var(--umber-soft)', paddingTop: 10 }}>
         <div className="hand" style={{ fontSize: 22, color: 'var(--umber)', marginBottom: 2 }}>
-          &mdash; {entry.name}
+          &mdash; {entry.guestName}
         </div>
         <div style={{ fontSize: 11, color: 'var(--ink-soft)', fontStyle: 'italic', fontFamily: 'var(--serif)' }}>
-          {entry.date} &middot; {entry.signoff}
+          {dateFmt}{entry.signoff ? ` · ${entry.signoff}` : ''}
         </div>
       </div>
     </div>
