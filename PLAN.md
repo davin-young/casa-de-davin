@@ -100,15 +100,15 @@ Guests receive a confirmation ref like `CDD-A7X2K` after booking. They should be
 ### 1.7 Infrastructure & Error Handling
 
 #### Health Check
-- [ ] **`GET /api/health`** — Returns `{ ok: true, db: "connected" }` if DB is reachable, `{ ok: false, db: "unreachable" }` with 503 if not
-- [ ] Useful for uptime monitoring (UptimeRobot, Vercel cron, etc.)
-- [ ] No auth required
+- [x] **`GET /api/health`** — Returns `{ ok: true, db: "connected" }` if DB is reachable, `{ ok: false, db: "unreachable" }` with 503 if not
+- [x] Useful for uptime monitoring (UptimeRobot, Vercel cron, etc.)
+- [x] No auth required
 
 #### Error Boundary Pages
-- [ ] **`app/not-found.tsx`** — Custom 404 page styled with `PaperSurface`, organic aesthetic. Friendly message: "This page wandered off. Try heading back to the house." with link to `/`
-- [ ] **`app/error.tsx`** — Custom 500 error boundary. "Something broke. Probably not your fault." with retry button. Must be a client component (`'use client'`)
-- [ ] **`app/(site)/not-found.tsx`** — Separate 404 for the site route group if needed (inherits layout styling)
-- [ ] All error pages match the paper/organic design system — same fonts, colors, grain texture
+- [x] **`app/not-found.tsx`** — Custom 404 page styled with `PaperSurface`, organic aesthetic. Friendly message: "This page wandered off. Try heading back to the house." with link to `/`
+- [x] **`app/error.tsx`** — Custom 500 error boundary. "Something broke. Probably not your fault." with retry button. Must be a client component (`'use client'`)
+- [x] **`app/(site)/not-found.tsx`** — Separate 404 for the site route group if needed (inherits layout styling)
+- [x] All error pages match the paper/organic design system — same fonts, colors, grain texture
 
 ---
 
