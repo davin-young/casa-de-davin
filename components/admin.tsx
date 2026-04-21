@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, HouseGlyph, CouchGlyph, BedGlyph, CheckIcon, XIcon } from './icons';
 import { PaperSurface, MossButton, SectionLabel, SprigDivider } from './shared';
+import AdminCalendar from './admin-calendar';
 
 type BookingStatus = 'pending' | 'approved' | 'declined';
 
@@ -61,8 +62,17 @@ interface ActivityItem {
   what: string;
 }
 
+interface CalendarBlackout {
+  id: string;
+  startDate: string;
+  endDate: string;
+  label: string;
+  room: 'couch' | 'bedroom' | null;
+}
+
 export default function AdminPanel({ onBack, adminEmail }: AdminPanelProps) {
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
+  const [calBlackouts, setCalBlackouts] = useState<CalendarBlackout[]>([]);
   const [filter, setFilter] = useState<'all' | BookingStatus>('all');
   const [selected, setSelected] = useState<BookingRecord | null>(null);
   const [loading, setLoading] = useState(true);
@@ -81,7 +91,15 @@ export default function AdminPanel({ onBack, adminEmail }: AdminPanelProps) {
     }
   }, []);
 
-  useEffect(() => { fetchBookings(); }, [fetchBookings]);
+  const fetchCalBlackouts = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/blackouts');
+      const data = await res.json() as { ok: boolean; blackouts?: CalendarBlackout[] };
+      if (data.ok && data.blackouts) setCalBlackouts(data.blackouts);
+    } catch {}
+  }, []);
+
+  useEffect(() => { fetchBookings(); fetchCalBlackouts(); }, [fetchBookings, fetchCalBlackouts]);
 
   const filtered = filter === 'all' ? bookings : bookings.filter(b => b.status === filter);
   const counts: Record<'all' | BookingStatus, number> = {
@@ -199,6 +217,14 @@ export default function AdminPanel({ onBack, adminEmail }: AdminPanelProps) {
             <EmptyDetail/>
           )}
         </aside>
+      </div>
+
+      <div style={{ maxWidth: 1240, margin: '36px auto 0', padding: '0 40px' }}>
+        <AdminCalendar
+          bookings={bookings}
+          blackouts={calBlackouts}
+          onSelectBooking={(b) => setSelected(b)}
+        />
       </div>
 
       <div style={{ maxWidth: 1240, margin: '36px auto 0', padding: '0 40px' }}>

@@ -153,29 +153,29 @@ Guests receive a confirmation ref like `CDD-A7X2K` after booking. They should be
 A full visual calendar in the admin panel showing all bookings and blackouts at a glance — the host's primary tool for understanding availability.
 
 #### Layout & Navigation
-- [ ] **Month grid calendar** — Full-width section in admin panel, above or below the bookings list
-- [ ] **Month navigation** — Prev/next arrows + "Today" button, month/year label
-- [ ] **Multi-month view toggle** — Option to show 1, 2, or 3 months side-by-side for planning ahead
+- [x] **Month grid calendar** — Full-width section in admin panel, above or below the bookings list
+- [x] **Month navigation** — Prev/next arrows + "Today" button, month/year label
+- [x] **Multi-month view toggle** — Option to show 1, 2, or 3 months side-by-side for planning ahead
 
 #### Visual Layers (color-coded)
-- [ ] **Approved bookings** — Colored bars spanning arrive→depart, labeled with guest name
+- [x] **Approved bookings** — Colored bars spanning arrive→depart, labeled with guest name
   - Bedroom bookings: moss/green bar
   - Couch bookings: honey/amber bar
-- [ ] **Pending bookings** ��� Same layout but dashed/semi-transparent, to show requests awaiting approval
-- [ ] **Declined bookings** — Hidden by default, toggle to show (faded red, strikethrough)
-- [ ] **Blackout dates** — Solid gray bars with diagonal hatch pattern, labeled with reason
-- [ ] **Today marker** — Subtle highlight or dot on current date
+- [x] **Pending bookings** ��� Same layout but dashed/semi-transparent, to show requests awaiting approval
+- [x] **Declined bookings** — Hidden by default, toggle to show (faded red, strikethrough)
+- [x] **Blackout dates** — Solid gray bars with diagonal hatch pattern, labeled with reason
+- [x] **Today marker** — Subtle highlight or dot on current date
 
 #### Interactions
-- [ ] **Click a booking bar** — Opens the booking detail sidebar (reuse existing `BookingDetail` component)
-- [ ] **Click a blackout bar** — Shows blackout info with option to delete
+- [x] **Click a booking bar** — Opens the booking detail sidebar (reuse existing `BookingDetail` component)
+- [x] **Click a blackout bar** — Shows blackout info with option to delete
 - [ ] **Click an empty date range** — Opens "Add blackout" quick-form pre-filled with that date
-- [ ] **Hover tooltip** — On any bar, show: guest name, room, dates, status, nights
+- [x] **Hover tooltip** — On any bar, show: guest name, room, dates, status, nights
 
 #### Data
-- [ ] **Fetch from `/api/admin/bookings`** (already available) + `/api/admin/blackouts`
-- [ ] **Room lanes** — Two swim-lanes: one for bedroom, one for couch. Blackouts with `room: null` span both lanes.
-- [ ] **Date range** — Default to current month ± 1 month. Lazy-load more months on navigation.
+- [x] **Fetch from `/api/admin/bookings`** (already available) + `/api/admin/blackouts`
+- [x] **Room lanes** — Two swim-lanes: one for bedroom, one for couch. Blackouts with `room: null` span both lanes.
+- [x] **Date range** — Default to current month ± 1 month. Lazy-load more months on navigation.
 
 #### Admin "Add to My Calendar" Button
 - [ ] **Per-booking "Add to Calendar" button** in the booking detail sidebar — generates a Google Calendar event link (`https://calendar.google.com/calendar/r/eventedit?...`) pre-filled with guest name, room, arrive/depart dates, and reason
@@ -183,8 +183,8 @@ A full visual calendar in the admin panel showing all bookings and blackouts at 
 - [ ] **Manual fallback** — If Google Calendar API isn't configured, show a `.ics` download button that generates an iCal file the admin can import into any calendar app
 
 #### Component Architecture
-- [ ] **New `AdminCalendar` component** in `components/admin-calendar.tsx`
-- [ ] Reuse design system: `PaperSurface`, `SectionLabel`, inline styles, same color palette
+- [x] **New `AdminCalendar` component** in `components/admin-calendar.tsx`
+- [x] Reuse design system: `PaperSurface`, `SectionLabel`, inline styles, same color palette
 - [ ] Mobile: stack room lanes vertically, allow horizontal scroll on the date axis
 
 ---
