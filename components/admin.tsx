@@ -668,6 +668,37 @@ function BookingDetail({ booking, allBookings, onUpdate, onDelete, onNotesUpdate
         )}
       </div>
 
+      {/* Calendar sync status + Add to Calendar */}
+      <div style={{ marginTop: 14, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        {booking.calendarEventId && (
+          <span style={{
+            fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase',
+            padding: '3px 8px',
+            background: 'rgba(90,125,58,0.15)',
+            borderRadius: '4px 2px 4px 2px',
+            color: 'var(--moss)',
+          }}>
+            Synced to calendar
+          </span>
+        )}
+        <a
+          href={`https://calendar.google.com/calendar/r/eventedit?text=${encodeURIComponent(`${booking.name} → ${booking.room} (casa)`)}&dates=${booking.arrive.replace(/-/g, '')}/${booking.depart.replace(/-/g, '')}&details=${encodeURIComponent(`Ref: ${booking.ref}\nRoom: ${booking.room}\nWhy: "${booking.why}"`)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            fontSize: 11,
+            color: 'var(--moss)',
+            fontFamily: 'var(--sans)',
+            textDecoration: 'none',
+            border: '1px dashed var(--moss)',
+            padding: '3px 8px',
+            borderRadius: '4px 2px 4px 2px',
+          }}
+        >
+          Add to Google Calendar
+        </a>
+      </div>
+
       <div style={{ marginTop: 14, fontSize: 11, color: 'var(--ink-soft)', fontStyle: 'italic', opacity: 0.75 }}>
         Approving sends them an email. Declining sends a kinder one. Either way, I&apos;ll probably still text.
       </div>

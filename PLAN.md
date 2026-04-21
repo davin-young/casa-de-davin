@@ -14,7 +14,7 @@
 
 **Broken / Incomplete:**
 - [x] `/api/admin/bookings` may 500 if migrations not fully applied
-- [ ] Activity feed is hardcoded mock data
+- [x] Activity feed is hardcoded mock data
 
 ---
 
@@ -178,8 +178,8 @@ A full visual calendar in the admin panel showing all bookings and blackouts at 
 - [x] **Date range** — Default to current month ± 1 month. Lazy-load more months on navigation.
 
 #### Admin "Add to My Calendar" Button
-- [ ] **Per-booking "Add to Calendar" button** in the booking detail sidebar — generates a Google Calendar event link (`https://calendar.google.com/calendar/r/eventedit?...`) pre-filled with guest name, room, arrive/depart dates, and reason
-- [ ] **Sync with Google Calendar API** — If `GOOGLE_CALENDAR_ID` is configured, use the existing `lib/google-calendar.ts` to create/update events server-side when approving. Show "Synced" badge if `calendarEventId` exists on the booking.
+- [x] **Per-booking "Add to Calendar" button** in the booking detail sidebar — generates a Google Calendar event link (`https://calendar.google.com/calendar/r/eventedit?...`) pre-filled with guest name, room, arrive/depart dates, and reason
+- [x] **Sync with Google Calendar API** — If `GOOGLE_CALENDAR_ID` is configured, use the existing `lib/google-calendar.ts` to create/update events server-side when approving. Show "Synced" badge if `calendarEventId` exists on the booking.
 - [ ] **Manual fallback** — If Google Calendar API isn't configured, show a `.ics` download button that generates an iCal file the admin can import into any calendar app
 
 #### Component Architecture
@@ -200,13 +200,13 @@ A full visual calendar in the admin panel showing all bookings and blackouts at 
 
 ### 3.1 Site Gate (`e2e/site-gate.spec.ts`)
 
-- [ ] Shows gate when not authenticated
-- [ ] Rejects invalid code (expect "Invalid code")
+- [x] Shows gate when not authenticated
+- [x] Rejects invalid code (expect "Invalid code")
 - [ ] Accepts site password (`SITE_PASSWORD` env)
 - [ ] Accepts valid invite code → unlocks site
 - [ ] Invite code is single-use (second attempt fails)
 - [ ] Session persists across page reloads
-- [ ] DEV bypass works in development
+- [x] DEV bypass works in development
 
 ### 3.2 Guest Booking Flow (`e2e/booking-flow.spec.ts`)
 
@@ -223,10 +223,10 @@ A full visual calendar in the admin panel showing all bookings and blackouts at 
 
 ### 3.3 Admin Login (`e2e/admin-login.spec.ts`)
 
-- [ ] Unauthenticated → redirect to `/login`
-- [ ] Login page shows "Sign in with Google" button
+- [x] Unauthenticated → redirect to `/login`
+- [x] Login page shows "Sign in with Google" button
 - [ ] Google OAuth redirect fires on click
-- [ ] Auth error messages display correctly (`?auth_error=not_authorized`)
+- [x] Auth error messages display correctly (`?auth_error=not_authorized`)
 - [ ] Mock login via cookie injection → admin panel loads
 
 ### 3.4 Admin Panel (`e2e/admin-panel.spec.ts`)
@@ -248,37 +248,37 @@ A full visual calendar in the admin panel showing all bookings and blackouts at 
 
 ### 3.5 Admin API Routes (`e2e/admin-api.spec.ts`)
 
-- [ ] `GET /api/admin/bookings` — 401 without session, 200 with session
-- [ ] `PATCH /api/admin/bookings/[id]` — 400 invalid status, 404 not found
-- [ ] `GET /api/admin/invites` — 401 without session
-- [ ] `POST /api/admin/invites` — generates code with note
+- [x] `GET /api/admin/bookings` — 401 without session, 200 with session
+- [x] `PATCH /api/admin/bookings/[id]` — 400 invalid status, 404 not found
+- [x] `GET /api/admin/invites` — 401 without session
+- [x] `POST /api/admin/invites` — generates code with note
 
 ### 3.6 Auth Middleware (`e2e/middleware.spec.ts`)
 
-- [ ] `/admin` → 302 redirect to `/login` (no session)
-- [ ] `/api/admin/bookings` → 401 JSON (no session)
-- [ ] `/api/admin/auth` → 403 (intentionally disabled)
+- [x] `/admin` → 302 redirect to `/login` (no session)
+- [x] `/api/admin/bookings` → 401 JSON (no session)
+- [x] `/api/admin/auth` → 403 (intentionally disabled)
 - [ ] Guest session → normal site access, no admin access
 - [ ] Admin session → full admin access
 
 ### 3.7 Public API Routes (`e2e/public-api.spec.ts`)
 
-- [ ] `POST /api/book` — valid submission → `{ ok: true, ref }`
-- [ ] `POST /api/book` — missing name → 400
-- [ ] `POST /api/book` — invalid room → 400
-- [ ] `POST /api/invite/redeem` — valid code → `{ ok: true }`
-- [ ] `POST /api/invite/redeem` — invalid code → 401
-- [ ] `GET /api/auth/status` — no session → `{ isGuest: false, isAdmin: false }`
-- [ ] `GET /api/auth/status` — guest session → `{ isGuest: true, isAdmin: false }`
+- [x] `POST /api/book` — valid submission → `{ ok: true, ref }`
+- [x] `POST /api/book` — missing name → 400
+- [x] `POST /api/book` — invalid room → 400
+- [x] `POST /api/invite/redeem` — valid code → `{ ok: true }`
+- [x] `POST /api/invite/redeem` — invalid code → 401
+- [x] `GET /api/auth/status` — no session → `{ isGuest: false, isAdmin: false }`
+- [x] `GET /api/auth/status` — guest session → `{ isGuest: true, isAdmin: false }`
 
 ### 3.8 Guest Booking Lookup (`e2e/booking-lookup.spec.ts`)
 
-- [ ] Valid ref → shows booking status page with name, room, dates, status
-- [ ] Invalid ref → 404 page
+- [x] Valid ref → shows booking status page with name, room, dates, status
+- [x] Invalid ref → 404 page
 - [ ] Approved booking → shows "You're in!" message
 - [ ] Pending booking → shows "Sit tight" message
 - [ ] Declined booking → shows "Sorry" message
-- [ ] Does NOT expose private fields (why, travel, email)
+- [x] Does NOT expose private fields (why, travel, email)
 - [ ] Rate-limited: rapid requests get 429
 - [ ] Guest cancels pending booking → status changes to declined, page updates
 - [ ] Guest cancels approved booking → status changes, confirmation dialog shown first
@@ -287,16 +287,16 @@ A full visual calendar in the admin panel showing all bookings and blackouts at 
 
 ### 3.9 Health & Error Pages (`e2e/error-pages.spec.ts`)
 
-- [ ] `GET /api/health` → `{ ok: true }` when DB is up
-- [ ] Navigate to `/nonexistent-page` → custom 404 page with paper styling
-- [ ] 404 page has link back to home
+- [x] `GET /api/health` → `{ ok: true }` when DB is up
+- [x] Navigate to `/nonexistent-page` → custom 404 page with paper styling
+- [x] 404 page has link back to home
 - [ ] Error boundary catches runtime errors gracefully
 
 ### 3.10 Navigation & Layout (`e2e/navigation.spec.ts`)
 
-- [ ] Nav bar renders after unlock (Rooms, About, Guestbook, Admin)
+- [x] Nav bar renders after unlock (Rooms, About, Guestbook, Admin)
 - [ ] Active nav highlighting works
-- [ ] Admin link redirects appropriately
+- [x] Admin link redirects appropriately
 - [ ] Back button on booking form works
 - [ ] Toast appears after booking submission
 
