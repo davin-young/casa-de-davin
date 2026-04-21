@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, CSSProperties } from 'react';
+import { useState, useMemo, CSSProperties, useCallback } from 'react';
 import { HouseGlyph, SunRayBurst, Sprout, ArrowRight } from './icons';
 import { PaperSurface, MossButton, SectionLabel, SprigDivider, COPY } from './shared';
 import { STAMP_POOL } from './silly';
@@ -154,6 +154,8 @@ export default function Confirmation({ booking, onBackToRooms, onBookOther, part
 
           <SprigDivider/>
 
+          {booking?.ref && <BookingRefBlock ref_={booking.ref} />}
+
           <div style={{
             marginTop: 18,
             fontFamily: 'var(--mono)',
@@ -253,6 +255,57 @@ function PendingStamp() {
       lineHeight: 1.2,
     } as CSSProperties}>
       {stamp}
+    </div>
+  );
+}
+
+function BookingRefBlock({ ref_ }: { ref_: string }) {
+  const [copied, setCopied] = useState(false);
+  const url = typeof window !== 'undefined' ? `${window.location.origin}/booking/${ref_}` : `/booking/${ref_}`;
+
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [url]);
+
+  return (
+    <div style={{
+      marginTop: 18,
+      padding: '14px 16px',
+      background: 'rgba(90,125,58,0.06)',
+      border: '1.5px dashed var(--moss)',
+      borderRadius: '10px 4px 10px 4px',
+    }}>
+      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--moss)', marginBottom: 6 }}>
+        Your booking ref
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <span style={{
+          fontFamily: 'var(--mono)',
+          fontSize: 22,
+          fontWeight: 700,
+          letterSpacing: '0.12em',
+          color: 'var(--moss)',
+        }}>{ref_}</span>
+        <button onClick={handleCopy} style={{
+          background: copied ? 'var(--moss)' : 'transparent',
+          border: `1.5px solid ${copied ? 'var(--moss)' : 'var(--umber-soft)'}`,
+          color: copied ? 'var(--oat)' : 'var(--ink-soft)',
+          padding: '4px 10px',
+          borderRadius: '6px 2px 6px 2px',
+          fontSize: 11,
+          fontFamily: 'var(--sans)',
+          fontWeight: 500,
+          cursor: 'pointer',
+          transition: 'all 0.15s ease',
+        }}>
+          {copied ? 'Copied!' : 'Copy link'}
+        </button>
+      </div>
+      <div style={{ fontSize: 12, color: 'var(--ink-soft)', fontStyle: 'italic', marginTop: 6 }}>
+        Bookmark this to check your status anytime.
+      </div>
     </div>
   );
 }

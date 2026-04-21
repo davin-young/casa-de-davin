@@ -54,48 +54,48 @@
 Guests receive a confirmation ref like `CDD-A7X2K` after booking. They should be able to check their booking status without needing admin access.
 
 #### Public Lookup Page
-- [ ] **New route `app/(site)/booking/[ref]/page.tsx`** — Public page at `/booking/CDD-A7X2K`
-- [ ] Shows: guest name, room, dates, nights, status (pending/approved/declined), submitted date
-- [ ] Styled like the confirmation page — read-only, no edit, organic paper aesthetic
-- [ ] Status badge: pending = honey, approved = moss, declined = terracotta
-- [ ] If approved: show a friendly "You're in!" message with check-in details
-- [ ] If declined: show a kind "Sorry, not this time" message
-- [ ] If pending: show "Sit tight — Davin's reviewing your request"
+- [x] **New route `app/(site)/booking/[ref]/page.tsx`** — Public page at `/booking/CDD-A7X2K`
+- [x] Shows: guest name, room, dates, nights, status (pending/approved/declined), submitted date
+- [x] Styled like the confirmation page — read-only, no edit, organic paper aesthetic
+- [x] Status badge: pending = honey, approved = moss, declined = terracotta
+- [x] If approved: show a friendly "You're in!" message with check-in details
+- [x] If declined: show a kind "Sorry, not this time" message
+- [x] If pending: show "Sit tight — Davin's reviewing your request"
 
 #### API
-- [ ] **`GET /api/booking/[ref]`** — Public endpoint, returns booking by ref code
+- [x] **`GET /api/booking/[ref]`** — Public endpoint, returns booking by ref code
   - Only returns: name, room, arrive, depart, status, createdAt (NOT email, why, travel — keep those private to admin)
   - Returns 404 if ref not found
   - No auth required (the ref code itself acts as a bearer token — it's unguessable)
 
 #### Confirmation Page Update
-- [ ] **Show ref prominently** on the confirmation page after submission (`components/confirmation.tsx`)
-- [ ] Add "Bookmark this link to check your status" with copyable URL: `/booking/CDD-A7X2K`
-- [ ] If guest provided email, include the ref + link in the confirmation email
+- [x] **Show ref prominently** on the confirmation page after submission (`components/confirmation.tsx`)
+- [x] Add "Bookmark this link to check your status" with copyable URL: `/booking/CDD-A7X2K`
+- [x] If guest provided email, include the ref + link in the confirmation email
 
 #### Email Notifications
-- [ ] **On approve/decline**, if guest email exists, send an email with:
+- [x] **On approve/decline**, if guest email exists, send an email with:
   - Current status
   - Link to `/booking/CDD-A7X2K` to check anytime
   - Friendly tone matching the site's voice
 
 #### Guest Cancellation
-- [ ] **"Cancel my booking" button** on the lookup page — only visible if status is `pending` or `approved`
-- [ ] Confirmation dialog: "Are you sure? This can't be undone."
-- [ ] **`POST /api/booking/[ref]/cancel`** — Sets status to `declined`, no auth required (ref is the token)
-- [ ] If Google Calendar event exists, delete it via `lib/google-calendar.ts`
+- [x] **"Cancel my booking" button** on the lookup page — only visible if status is `pending` or `approved`
+- [x] Confirmation dialog: "Are you sure? This can't be undone."
+- [x] **`POST /api/booking/[ref]/cancel`** — Sets status to `declined`, no auth required (ref is the token)
+- [x] If Google Calendar event exists, delete it via `lib/google-calendar.ts`
 - [ ] If guest email exists, send a cancellation confirmation email
-- [ ] Admin gets notified (email or just visible in the dashboard as a status change)
+- [x] Admin gets notified (email or just visible in the dashboard as a status change)
 
 #### Open Graph / Link Previews
-- [ ] **Dynamic OG metadata** on `/booking/[ref]` — "Casa de Davin — Booking CDD-A7X2K" with status in description
-- [ ] When guests share their booking link, it previews nicely in iMessage/Slack/etc.
+- [x] **Dynamic OG metadata** on `/booking/[ref]` — "Casa de Davin — Booking CDD-A7X2K" with status in description
+- [x] When guests share their booking link, it previews nicely in iMessage/Slack/etc.
 
 #### Security
-- [ ] Ref codes are already random 5-char alphanumeric (`CDD-XXXXX`) — ~60M combinations, practically unguessable
-- [ ] Rate-limit the lookup endpoint to prevent enumeration (reuse existing rate limiter)
-- [ ] Rate-limit the cancel endpoint separately (prevent abuse)
-- [ ] Never expose admin-only fields (why, travel, activities, email) in the public response
+- [x] Ref codes are already random 5-char alphanumeric (`CDD-XXXXX`) — ~60M combinations, practically unguessable
+- [x] Rate-limit the lookup endpoint to prevent enumeration (reuse existing rate limiter)
+- [x] Rate-limit the cancel endpoint separately (prevent abuse)
+- [x] Never expose admin-only fields (why, travel, activities, email) in the public response
 
 ### 1.7 Infrastructure & Error Handling
 

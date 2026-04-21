@@ -9,6 +9,7 @@ export interface BookingEmailData {
   depart: string;
   why: string;
   travel: string;
+  activities: string;
   ref: string;
 }
 
@@ -60,6 +61,7 @@ export async function sendBookingNotification(data: BookingEmailData): Promise<v
           <em>Why:</em> &ldquo;${data.why}&rdquo;
         </p>
         ${data.travel ? `<p style="margin: 0 0 8px; color: #3d4a33;"><em>Travel:</em> ${data.travel}</p>` : ''}
+        ${data.activities ? `<p style="margin: 0 0 8px; color: #3d4a33;"><em>Wants to do:</em> ${data.activities}</p>` : ''}
         <hr style="border: none; border-top: 1px dashed #9b5a42; margin: 20px 0;" />
         <p style="font-size: 13px; color: #9b5a42;">
           Ref: ${data.ref}<br/>
@@ -71,6 +73,7 @@ export async function sendBookingNotification(data: BookingEmailData): Promise<v
       `${data.name} · ${roomLabel} · ${fmtDate(data.arrive)} → ${fmtDate(data.depart)} (${nights} nights)`,
       `Why: "${data.why}"`,
       data.travel ? `Travel: ${data.travel}` : '',
+      data.activities ? `Wants to do: ${data.activities}` : '',
       `Ref: ${data.ref}`,
     ].filter(Boolean).join('\n'),
   });
@@ -82,6 +85,7 @@ export async function sendApprovalEmail(data: BookingEmailData, guestEmail: stri
   const resend = getResend();
   const config = getConfig();
   const roomLabel = data.room === 'couch' ? 'the couch' : 'the bedroom';
+  const bookingUrl = `https://casadedavin.house/booking/${data.ref}`;
 
   await resend.emails.send({
     from: config.from,
@@ -94,6 +98,7 @@ export async function sendApprovalEmail(data: BookingEmailData, guestEmail: stri
         <p>Ok you're in.</p>
         <p>I put you on ${roomLabel} for ${fmtDate(data.arrive)}&ndash;${fmtDate(data.depart)}.
         Key situation: I'll text you the day before. Don't lose it, I only have two.</p>
+        <p>Your booking: <a href="${bookingUrl}" style="color: #5a7d3a;">${data.ref}</a></p>
         <p>&mdash; D</p>
         <hr style="border: none; border-top: 1px dashed #9b5a42; margin: 20px 0;" />
         <p style="font-size: 11px; color: #9b5a42;">
@@ -101,7 +106,7 @@ export async function sendApprovalEmail(data: BookingEmailData, guestEmail: stri
         </p>
       </div>
     `,
-    text: `${data.name} —\n\nOk you're in.\n\nI put you on ${roomLabel} for ${fmtDate(data.arrive)}–${fmtDate(data.depart)}.\n\n— D`,
+    text: `${data.name} —\n\nOk you're in.\n\nI put you on ${roomLabel} for ${fmtDate(data.arrive)}–${fmtDate(data.depart)}.\n\nYour booking: ${bookingUrl}\n\n— D`,
   });
 }
 
@@ -110,6 +115,7 @@ export async function sendApprovalEmail(data: BookingEmailData, guestEmail: stri
 export async function sendDeclineEmail(data: BookingEmailData, guestEmail: string): Promise<void> {
   const resend = getResend();
   const config = getConfig();
+  const bookingUrl = `https://casadedavin.house/booking/${data.ref}`;
 
   await resend.emails.send({
     from: config.from,
@@ -121,6 +127,7 @@ export async function sendDeclineEmail(data: BookingEmailData, guestEmail: strin
         <p>${data.name} &mdash;</p>
         <p>I can't make those dates work. Not a vibe thing, just a calendar thing.</p>
         <p>Reply with some other dates and I'll see what I can do.</p>
+        <p>Your booking: <a href="${bookingUrl}" style="color: #5a7d3a;">${data.ref}</a></p>
         <p>&mdash; D</p>
         <hr style="border: none; border-top: 1px dashed #9b5a42; margin: 20px 0;" />
         <p style="font-size: 11px; color: #9b5a42;">
@@ -128,6 +135,6 @@ export async function sendDeclineEmail(data: BookingEmailData, guestEmail: strin
         </p>
       </div>
     `,
-    text: `${data.name} —\n\nI can't make those dates work. Not a vibe thing, just a calendar thing.\n\nReply with some other dates and I'll see what I can do.\n\n— D`,
+    text: `${data.name} —\n\nI can't make those dates work. Not a vibe thing, just a calendar thing.\n\nReply with some other dates and I'll see what I can do.\n\nYour booking: ${bookingUrl}\n\n— D`,
   });
 }
