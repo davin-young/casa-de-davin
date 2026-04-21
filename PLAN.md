@@ -31,7 +31,7 @@
 ### 1.2 Stats & Analytics
 
 - [x] **Auth-guard stats route** — `GET /api/stats` is public. Move to `/api/admin/stats` or add session check.
-- [ ] **Richer stats** — Only returns total + approved. Add: pending/declined counts, bookings this month, average stay length, room split, invite redemption rate.
+- [x] **Richer stats** — Only returns total + approved. Add: pending/declined counts, bookings this month, average stay length, room split, invite redemption rate.
 - [ ] **Analytics section in admin UI** — Add collapsible section below invite codes showing charts/metrics.
 
 ### 1.3 Activity Feed
@@ -193,10 +193,10 @@ A full visual calendar in the admin panel showing all bookings and blackouts at 
 
 ### Setup
 
-- [ ] Install: `npm install -D @playwright/test`
-- [ ] Create `playwright.config.ts` (base URL `http://localhost:3000`, chromium)
-- [ ] Create `e2e/` directory
-- [ ] Create `e2e/helpers.ts` — shared utilities: `loginAsGuest()`, `loginAsAdmin()`, `seedDatabase()`, `cleanDatabase()`
+- [x] Install: `npm install -D @playwright/test`
+- [x] Create `playwright.config.ts` (base URL `http://localhost:3000`, chromium)
+- [x] Create `e2e/` directory
+- [x] Create `e2e/helpers.ts` — shared utilities: `loginAsGuest()`, `loginAsAdmin()`, `seedDatabase()`, `cleanDatabase()`
 
 ### 3.1 Site Gate (`e2e/site-gate.spec.ts`)
 
