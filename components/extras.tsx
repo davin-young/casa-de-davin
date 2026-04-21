@@ -117,37 +117,31 @@ interface CodeBlockProps {
 // ── Components ──────────────────────────────────────────────────────
 
 export function AdminGate({ onUnlock }: AdminGateProps) {
-  const [pw, setPw] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
-  const [attempts, setAttempts] = useState<number>(0);
 
-  const hints: string[] = [
-    "Hint: it's where I spent most of 2024.",
-    "Hint: the kava bar. The one. You know the one.",
-    "Hint: two words, first one is an adverb, second is a pronoun.",
-    "Hint: it's literally the first word of the place's name.",
-  ];
-
-  const submit = async (e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    try {
-      const res = await fetch('/api/admin/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: pw.trim() }),
-      });
-      const data = await res.json() as { ok: boolean; error?: string };
-      if (data.ok) {
-        onUnlock();
-      } else {
-        setAttempts(a => a + 1);
-        setError(data.error || 'Nope. Try again, sincerely.');
-        setPw('');
-      }
-    } catch {
-      setError('Network error. Try again.');
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const authError = params.get('auth_error');
+    if (authError) {
+      const messages: Record<string, string> = {
+        denied: 'Sign-in was cancelled.',
+        not_authorized: 'That Google account isn\u2019t authorized as admin.',
+        token_exchange: 'Google auth failed. Try again.',
+        invalid_state: 'Session expired. Try again.',
+        not_configured: 'Google OAuth isn\u2019t configured on the server.',
+      };
+      setError(messages[authError] || 'Something went wrong.');
+      window.history.replaceState({}, '', window.location.pathname);
     }
-  };
+
+    // Check if we just came back from a successful OAuth flow
+    fetch('/api/auth/status')
+      .then(r => r.json())
+      .then((data: { isAdmin: boolean }) => {
+        if (data.isAdmin) onUnlock();
+      })
+      .catch(() => {});
+  }, [onUnlock]);
 
   return (
     <PaperSurface style={{ minHeight: '100%', padding: '80px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -189,53 +183,56 @@ export function AdminGate({ onUnlock }: AdminGateProps) {
           Just a soft lock. If you&apos;re not Davin, close this tab, please and thank you.
         </p>
 
-        <form onSubmit={submit}>
-          <div style={{ marginBottom: 6, fontSize: 10, fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--umber)' }}>
-            Password
+        <button
+          onClick={() => { window.location.href = '/api/auth/google'; }}
+          style={{
+            width: '100%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+            padding: '12px 20px',
+            background: '#fff',
+            border: '1.5px solid var(--umber-soft)',
+            borderRadius: '12px 4px 12px 4px',
+            cursor: 'pointer',
+            fontFamily: 'var(--sans)',
+            fontSize: 15,
+            fontWeight: 500,
+            color: 'var(--ink)',
+            transition: 'box-shadow 200ms ease',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.boxShadow = 'var(--shadow-lift)')}
+          onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
+        >
+          <svg width="18" height="18" viewBox="0 0 48 48">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59a14.5 14.5 0 010-9.18l-7.98-6.19a24.08 24.08 0 000 21.56l7.98-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+          </svg>
+          Sign in with Google
+        </button>
+
+        {error && (
+          <div style={{ marginTop: 14, fontSize: 13, color: 'var(--terracotta-deep)', fontStyle: 'italic', fontFamily: 'var(--serif)' }}>
+            {error}
           </div>
-          <input
-            type="password"
-            value={pw}
-            onChange={(e) => { setPw(e.target.value); setError(null); }}
-            autoFocus
-            placeholder="first word of my favorite kava bar"
-            style={{
-              width: '100%',
-              background: 'transparent',
-              border: 'none',
-              borderBottom: `1.5px dashed ${error ? 'var(--terracotta-deep)' : 'var(--umber-soft)'}`,
-              padding: '8px 2px',
-              fontFamily: 'var(--serif)',
-              fontSize: 20,
-              color: 'var(--ink)',
-              outline: 'none',
-            }}
-          />
-          {error && (
-            <div style={{ marginTop: 8, fontSize: 13, color: 'var(--terracotta-deep)', fontStyle: 'italic', fontFamily: 'var(--serif)' }}>
-              {error}
-            </div>
-          )}
-          {attempts > 0 && (
-            <div className="hand" style={{ marginTop: 10, fontSize: 18, color: 'var(--umber-soft)' }}>
-              {hints[Math.min(attempts - 1, hints.length - 1)]}
-            </div>
-          )}
-          <div style={{ marginTop: 22, display: 'flex', gap: 10, alignItems: 'center' }}>
-            <MossButton type="submit" size="md" onClick={submit}>
-              Let me in <ArrowRight size={14}/>
-            </MossButton>
-            <span style={{ fontSize: 11, color: 'var(--ink-soft)', fontStyle: 'italic' }}>
-              (forgot it? text Davin.)
-            </span>
-          </div>
-        </form>
+        )}
       </div>
     </PaperSurface>
   );
 }
 
 export function AboutPage({ onBack }: AboutPageProps) {
+  const [stayCount, setStayCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch('/api/stats')
+      .then(r => r.json())
+      .then((data: { approvedStays?: number }) => {
+        if (typeof data.approvedStays === 'number') setStayCount(data.approvedStays);
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <PaperSurface style={{ minHeight: '100%', paddingBottom: 60 }}>
       <div style={{ padding: '22px 40px 10px', maxWidth: 980, margin: '0 auto' }}>
@@ -293,7 +290,7 @@ export function AboutPage({ onBack }: AboutPageProps) {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 28, marginTop: 28 }}>
           <FactBlock title="Location" big="Denver-ish, CO" sub="LoDo. Walk to coffee. Drive to mountains."/>
           <FactBlock title="Hosting since" big="2026" sub="Back when 'hosting' meant 'forgot you were coming, but sure.'"/>
-          <FactBlock title="Stays to date" big="41" sub="Zero have ended in estrangement. Close calls: two."/>
+          <FactBlock title="Stays to date" big={stayCount !== null ? String(stayCount) : '...'} sub="Zero have ended in estrangement. Close calls: two."/>
         </div>
 
         <SprigDivider/>
@@ -340,10 +337,10 @@ export function AboutPage({ onBack }: AboutPageProps) {
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {([
-              ['Is there parking?', "Street parking, yes, usually. On trash day, good luck. It's Tuesday."],
+              ['Is there parking?', "Street parking, yes, usually."],
               ['Can I bring my dog?', "Depends on the dog. Send a picture. I'll judge and reply."],
               ['Is there wifi?', "Yes. The password is somewhere on the fridge under a magnet shaped like a pickle."],
-              ['Do you have a guest key?', "I have a spare that I hide in a place I'll tell you. No, not under the mat."],
+              ['Do you have a guest key?', "There's a door code — I'll send it to you before you arrive."],
               ["What if I'm allergic to plants?", "Then this may not be your Casa. I'm sorry."],
             ] as [string, string][]).map(([q, a]) => (
               <details key={q} style={{

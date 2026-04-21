@@ -110,6 +110,34 @@ export async function sendApprovalEmail(data: BookingEmailData, guestEmail: stri
   });
 }
 
+// ── Cancellation confirmation to guest ──────────────────────────────
+
+export async function sendCancellationEmail(data: BookingEmailData, guestEmail: string): Promise<void> {
+  const resend = getResend();
+  const config = getConfig();
+  const roomLabel = data.room === 'couch' ? 'the couch' : 'the bedroom';
+
+  await resend.emails.send({
+    from: config.from,
+    to: guestEmail,
+    replyTo: config.to,
+    subject: 'booking cancelled',
+    html: `
+      <div style="font-family: Georgia, serif; max-width: 520px; color: #2b3524; line-height: 1.6;">
+        <p>${data.name} &mdash;</p>
+        <p>Your booking for ${roomLabel} (${fmtDate(data.arrive)}&ndash;${fmtDate(data.depart)}) has been cancelled.</p>
+        <p>If this was a mistake, just reply to this email or submit a new request.</p>
+        <p>&mdash; D</p>
+        <hr style="border: none; border-top: 1px dashed #9b5a42; margin: 20px 0;" />
+        <p style="font-size: 11px; color: #9b5a42;">
+          Casa de Davin &middot; Denver-ish, CO &middot; Not a business, just a person.
+        </p>
+      </div>
+    `,
+    text: `${data.name} —\n\nYour booking for ${roomLabel} (${fmtDate(data.arrive)}–${fmtDate(data.depart)}) has been cancelled.\n\nIf this was a mistake, just reply to this email or submit a new request.\n\n— D`,
+  });
+}
+
 // ── Decline email to guest ──────────────────────────────────────────
 
 export async function sendDeclineEmail(data: BookingEmailData, guestEmail: string): Promise<void> {

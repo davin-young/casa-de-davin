@@ -362,6 +362,10 @@ export default function AdminPanel({ onBack, adminEmail }: AdminPanelProps) {
       </div>
 
       <div style={{ maxWidth: 1240, margin: '36px auto 0', padding: '0 40px' }}>
+        <AnalyticsSection />
+      </div>
+
+      <div style={{ maxWidth: 1240, margin: '36px auto 0', padding: '0 40px' }}>
         <BlackoutDatesSection />
       </div>
 
@@ -931,6 +935,81 @@ function InviteCodesSection() {
         </div>
       )}
     </section>
+  );
+}
+
+interface StatsData {
+  totalBookings: number;
+  approvedStays: number;
+  pendingRequests: number;
+  declinedRequests: number;
+  bookingsThisMonth: number;
+  roomSplit: { couch: number; bedroom: number };
+  averageStayNights: number;
+  inviteRedemptionRate: number;
+}
+
+function AnalyticsSection() {
+  const [stats, setStats] = useState<StatsData | null>(null);
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/stats')
+      .then(r => r.json())
+      .then((data: { ok: boolean } & StatsData) => {
+        if (data.ok) setStats(data);
+      })
+      .catch(() => {});
+  }, []);
+
+  if (!stats) return null;
+
+  return (
+    <section style={{
+      padding: '24px 26px',
+      background: 'var(--linen)',
+      border: '1.5px solid var(--umber-soft)',
+      borderRadius: '16px 6px 16px 6px',
+    }}>
+      <button onClick={() => setExpanded(!expanded)} style={{
+        background: 'transparent', border: 'none', cursor: 'pointer',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        width: '100%', padding: 0,
+      }}>
+        <div>
+          <SectionLabel>Analytics</SectionLabel>
+          <div style={{ fontSize: 13, color: 'var(--ink-soft)', fontStyle: 'italic', fontFamily: 'var(--serif)', marginTop: 2, textAlign: 'left' }}>
+            Booking stats and trends.
+          </div>
+        </div>
+        <span style={{ fontSize: 18, color: 'var(--umber)', transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+          ▾
+        </span>
+      </button>
+
+      {expanded && (
+        <div style={{ marginTop: 18, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+          <MetricCard label="This month" value={stats.bookingsThisMonth} />
+          <MetricCard label="Avg stay" value={`${stats.averageStayNights} nights`} />
+          <MetricCard label="Room split" value={`${stats.roomSplit.bedroom}B / ${stats.roomSplit.couch}C`} />
+          <MetricCard label="Invite rate" value={`${stats.inviteRedemptionRate}%`} />
+        </div>
+      )}
+    </section>
+  );
+}
+
+function MetricCard({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div style={{
+      padding: '14px 16px',
+      background: 'rgba(242,234,216,0.6)',
+      border: '1px dashed var(--umber-soft)',
+      borderRadius: '10px 4px 10px 4px',
+    }}>
+      <div style={{ fontFamily: 'var(--serif)', fontSize: 24, fontWeight: 600, color: 'var(--ink)' }}>{value}</div>
+      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--umber)', fontWeight: 600, marginTop: 4 }}>{label}</div>
+    </div>
   );
 }
 

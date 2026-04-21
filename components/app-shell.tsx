@@ -9,7 +9,8 @@ import Landing from './landing';
 import BookingForm, { type Booking } from './form';
 import Confirmation from './confirmation';
 import AdminPanel from './admin';
-import { AdminGate, AboutPage, Guestbook, ErrorScreen, SharePage, EmailPreviews, HandoffDoc, GuestGate } from './extras';
+import { AdminGate, AboutPage, Guestbook, ErrorScreen, SharePage, EmailPreviews, HandoffDoc } from './extras';
+import SiteGate from './site-gate';
 
 type Screen = 'landing' | 'form' | 'confirmation' | 'admin' | 'about' | 'guestbook' | 'error' | 'share' | 'emails' | 'handoff';
 type Room = 'bedroom' | 'couch';
@@ -17,38 +18,57 @@ type Room = 'bedroom' | 'couch';
 type AccentMap = Record<string, string>;
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>(() => {
-    if (typeof window === 'undefined') return 'landing';
-    return (localStorage.getItem('casa_screen') as Screen) || 'landing';
-  });
-  const [room, setRoom] = useState<Room>(() => {
-    if (typeof window === 'undefined') return 'bedroom';
-    return (localStorage.getItem('casa_room') as Room) || 'bedroom';
-  });
-  const [booking, setBooking] = useState<Booking | null>(() => {
-    if (typeof window === 'undefined') return null;
-    try { return JSON.parse(localStorage.getItem('casa_booking') || 'null'); } catch { return null; }
-  });
-  const [adminUnlocked, setAdminUnlocked] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return localStorage.getItem('casa_admin_ok') === '1';
-  });
-  const [guestUnlocked, setGuestUnlocked] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return localStorage.getItem('casa_guest_ok') === '1';
-  });
-  const [guestGateOpen, setGuestGateOpen] = useState<boolean>(false);
-  const [pendingRoom, setPendingRoom] = useState<Room | null>(null);
+  const [screen, setScreen] = useState<Screen>('landing');
+  const [room, setRoom] = useState<Room>('bedroom');
+  const [booking, setBooking] = useState<Booking | null>(null);
+  const [adminUnlocked, setAdminUnlocked] = useState(false);
+  const [siteUnlocked, setSiteUnlocked] = useState(false);
+  const [siteChecked, setSiteChecked] = useState(false);
   const [tweaks, setTweaks] = useState<Tweaks>(TWEAK_DEFAULTS);
-  const [editMode, setEditMode] = useState<boolean>(false);
+  const [editMode, setEditMode] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  // Hydrate from localStorage + check auth after mount
+  useEffect(() => {
+    setScreen((localStorage.getItem('casa_screen') as Screen) || 'landing');
+    setRoom((localStorage.getItem('casa_room') as Room) || 'bedroom');
+    setAdminUnlocked(localStorage.getItem('casa_admin_ok') === '1');
+    setSiteUnlocked(localStorage.getItem('casa_site_ok') === '1');
+    try {
+      const saved = localStorage.getItem('casa_booking');
+      if (saved) setBooking(JSON.parse(saved));
+    } catch {}
+
+    // Verify session with server
+    fetch('/api/auth/status')
+      .then(r => r.json())
+      .then((data: { isGuest: boolean; isAdmin: boolean }) => {
+        if (data.isGuest || data.isAdmin) {
+          setSiteUnlocked(true);
+          localStorage.setItem('casa_site_ok', '1');
+          if (data.isAdmin) {
+            setAdminUnlocked(true);
+            localStorage.setItem('casa_admin_ok', '1');
+          }
+        } else {
+          setSiteUnlocked(false);
+          localStorage.removeItem('casa_site_ok');
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        setSiteChecked(true);
+        setMounted(true);
+      });
+  }, []);
 
   // Persist
-  useEffect(() => { localStorage.setItem('casa_screen', screen); }, [screen]);
-  useEffect(() => { localStorage.setItem('casa_room', room); }, [room]);
+  useEffect(() => { if (mounted) localStorage.setItem('casa_screen', screen); }, [screen, mounted]);
+  useEffect(() => { if (mounted) localStorage.setItem('casa_room', room); }, [room, mounted]);
   useEffect(() => {
-    if (booking) localStorage.setItem('casa_booking', JSON.stringify(booking, (_k: string, v: unknown) => v instanceof Date ? { __date: v.toISOString() } : v));
-  }, [booking]);
+    if (mounted && booking) localStorage.setItem('casa_booking', JSON.stringify(booking, (_k: string, v: unknown) => v instanceof Date ? { __date: v.toISOString() } : v));
+  }, [booking, mounted]);
 
   // Edit mode wiring
   useEffect(() => {
@@ -102,26 +122,26 @@ export default function App() {
     setTimeout(() => setToast(null), 2600);
   };
 
+  const handleSiteUnlock = () => {
+    setSiteUnlocked(true);
+    localStorage.setItem('casa_site_ok', '1');
+    // Re-check if this was an admin login
+    fetch('/api/auth/status')
+      .then(r => r.json())
+      .then((data: { isAdmin: boolean }) => {
+        if (data.isAdmin) {
+          setAdminUnlocked(true);
+          localStorage.setItem('casa_admin_ok', '1');
+          setScreen('admin');
+        }
+      })
+      .catch(() => {});
+  };
+
   const handlePickRoom = (r: Room) => {
-    if (!guestUnlocked) {
-      setPendingRoom(r);
-      setGuestGateOpen(true);
-      return;
-    }
     setRoom(r);
     setScreen('form');
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-  const handleGuestUnlock = () => {
-    setGuestUnlocked(true);
-    localStorage.setItem('casa_guest_ok', '1');
-    setGuestGateOpen(false);
-    if (pendingRoom) {
-      setRoom(pendingRoom);
-      setScreen('form');
-      setPendingRoom(null);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
   };
   const handleBack = () => {
     setScreen('landing');
@@ -144,6 +164,15 @@ export default function App() {
     ['about', 'About'],
     ['guestbook', 'Guestbook'],
   ];
+
+  // Show nothing until mounted (localStorage hydrated + auth checked)
+  if (!mounted) {
+    return null;
+  }
+
+  if (!siteUnlocked) {
+    return <SiteGate onUnlock={handleSiteUnlock} />;
+  }
 
   return (
     <div style={{
@@ -282,15 +311,6 @@ export default function App() {
 
       {/* Toast */}
       {toast && <Toast>{toast}</Toast>}
-
-      {/* Guest password gate */}
-      {guestGateOpen && (
-        <GuestGate
-          onUnlock={handleGuestUnlock}
-          onCancel={() => { setGuestGateOpen(false); setPendingRoom(null); }}
-          room={pendingRoom}
-        />
-      )}
 
       {/* Tweaks panel */}
       <TweaksPanel tweaks={tweaks} onChange={updateTweaks} visible={editMode}/>

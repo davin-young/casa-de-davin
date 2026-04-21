@@ -4,6 +4,7 @@ import { db } from '@/db';
 import { bookings } from '@/db/schema';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { updateEventStatus } from '@/lib/google-calendar';
+import { sendCancellationEmail } from '@/lib/email';
 
 export async function POST(
   request: NextRequest,
@@ -52,6 +53,24 @@ export async function POST(
         await updateEventStatus(booking.calendarEventId, 'declined');
       } catch (calErr) {
         console.error('Calendar update failed (non-fatal):', calErr instanceof Error ? calErr.message : calErr);
+      }
+    }
+
+    // Send cancellation confirmation email if guest provided email
+    if (booking.email) {
+      try {
+        await sendCancellationEmail({
+          name: booking.name,
+          room: booking.room,
+          arrive: booking.arrive,
+          depart: booking.depart,
+          why: booking.why,
+          travel: booking.travel,
+          activities: booking.activities,
+          ref: booking.ref,
+        }, booking.email);
+      } catch (emailErr) {
+        console.error('Cancellation email failed (non-fatal):', emailErr instanceof Error ? emailErr.message : emailErr);
       }
     }
 

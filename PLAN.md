@@ -32,7 +32,7 @@
 
 - [x] **Auth-guard stats route** — `GET /api/stats` is public. Move to `/api/admin/stats` or add session check.
 - [x] **Richer stats** — Only returns total + approved. Add: pending/declined counts, bookings this month, average stay length, room split, invite redemption rate.
-- [ ] **Analytics section in admin UI** — Add collapsible section below invite codes showing charts/metrics.
+- [x] **Analytics section in admin UI** — Add collapsible section below invite codes showing charts/metrics.
 
 ### 1.3 Activity Feed
 
@@ -84,7 +84,7 @@ Guests receive a confirmation ref like `CDD-A7X2K` after booking. They should be
 - [x] Confirmation dialog: "Are you sure? This can't be undone."
 - [x] **`POST /api/booking/[ref]/cancel`** — Sets status to `declined`, no auth required (ref is the token)
 - [x] If Google Calendar event exists, delete it via `lib/google-calendar.ts`
-- [ ] If guest email exists, send a cancellation confirmation email
+- [x] If guest email exists, send a cancellation confirmation email
 - [x] Admin gets notified (email or just visible in the dashboard as a status change)
 
 #### Open Graph / Link Previews
@@ -135,7 +135,7 @@ Guests receive a confirmation ref like `CDD-A7X2K` after booking. They should be
 
 - [x] **Remove hardcoded `BLACKOUTS` array** from `components/form.tsx`
 - [x] Accept `blockedDates` as prop, fetched from `/api/blocked-dates`
-- [ ] Differentiate visuals: booked (hatched/"taken") vs admin blackout (gray/"unavailable")
+- [x] Differentiate visuals: booked (hatched/"taken") vs admin blackout (gray/"unavailable")
 - [x] Room-specific: couch bookings only block couch calendar, etc. Blackouts with `room: null` block both.
 
 ### 2.5 Server-Side Overlap Validation
@@ -169,7 +169,7 @@ A full visual calendar in the admin panel showing all bookings and blackouts at 
 #### Interactions
 - [x] **Click a booking bar** — Opens the booking detail sidebar (reuse existing `BookingDetail` component)
 - [x] **Click a blackout bar** — Shows blackout info with option to delete
-- [ ] **Click an empty date range** — Opens "Add blackout" quick-form pre-filled with that date
+- [x] **Click an empty date range** — Opens "Add blackout" quick-form pre-filled with that date
 - [x] **Hover tooltip** — On any bar, show: guest name, room, dates, status, nights
 
 #### Data
@@ -180,12 +180,12 @@ A full visual calendar in the admin panel showing all bookings and blackouts at 
 #### Admin "Add to My Calendar" Button
 - [x] **Per-booking "Add to Calendar" button** in the booking detail sidebar — generates a Google Calendar event link (`https://calendar.google.com/calendar/r/eventedit?...`) pre-filled with guest name, room, arrive/depart dates, and reason
 - [x] **Sync with Google Calendar API** — If `GOOGLE_CALENDAR_ID` is configured, use the existing `lib/google-calendar.ts` to create/update events server-side when approving. Show "Synced" badge if `calendarEventId` exists on the booking.
-- [ ] **Manual fallback** — If Google Calendar API isn't configured, show a `.ics` download button that generates an iCal file the admin can import into any calendar app
+- [x] **Manual fallback** — If Google Calendar API isn't configured, show a `.ics` download button that generates an iCal file the admin can import into any calendar app
 
 #### Component Architecture
 - [x] **New `AdminCalendar` component** in `components/admin-calendar.tsx`
 - [x] Reuse design system: `PaperSurface`, `SectionLabel`, inline styles, same color palette
-- [ ] Mobile: stack room lanes vertically, allow horizontal scroll on the date axis
+- [x] Mobile: stack room lanes vertically, allow horizontal scroll on the date axis
 
 ---
 
@@ -202,49 +202,49 @@ A full visual calendar in the admin panel showing all bookings and blackouts at 
 
 - [x] Shows gate when not authenticated
 - [x] Rejects invalid code (expect "Invalid code")
-- [ ] Accepts site password (`SITE_PASSWORD` env)
-- [ ] Accepts valid invite code → unlocks site
-- [ ] Invite code is single-use (second attempt fails)
-- [ ] Session persists across page reloads
+- [x] Accepts site password (`SITE_PASSWORD` env)
+- [x] Accepts valid invite code → unlocks site
+- [x] Invite code is single-use (second attempt fails)
+- [x] Session persists across page reloads
 - [x] DEV bypass works in development
 
 ### 3.2 Guest Booking Flow (`e2e/booking-flow.spec.ts`)
 
-- [ ] Landing page shows room cards after unlock
-- [ ] Navigate to couch/bedroom booking
-- [ ] Form validation: empty submission blocked
-- [ ] Form validation: name, dates, reason all required
-- [ ] Calendar navigation (next/prev month)
-- [ ] Calendar date range selection
-- [ ] Calendar blackout dates are not clickable
-- [ ] Successful booking → redirect to confirmation
-- [ ] Confirmation page shows booking details
-- [ ] Rate limiting: second submit within 60s returns 429
+- [x] Landing page shows room cards after unlock
+- [x] Navigate to couch/bedroom booking
+- [x] Form validation: empty submission blocked
+- [x] Form validation: name, dates, reason all required
+- [x] Calendar navigation (next/prev month)
+- [x] Calendar date range selection
+- [x] Calendar blackout dates are not clickable
+- [x] Successful booking → redirect to confirmation
+- [x] Confirmation page shows booking details
+- [x] Rate limiting: second submit within 60s returns 429
 
 ### 3.3 Admin Login (`e2e/admin-login.spec.ts`)
 
 - [x] Unauthenticated → redirect to `/login`
 - [x] Login page shows "Sign in with Google" button
-- [ ] Google OAuth redirect fires on click
+- [x] Google OAuth redirect fires on click
 - [x] Auth error messages display correctly (`?auth_error=not_authorized`)
-- [ ] Mock login via cookie injection → admin panel loads
+- [x] Mock login via cookie injection → admin panel loads
 
 ### 3.4 Admin Panel (`e2e/admin-panel.spec.ts`)
 
-- [ ] Dashboard heading + stat tiles visible
-- [ ] Bookings list loads with seeded data
-- [ ] Filter by status (pending/approved/declined)
-- [ ] Click booking → detail sidebar opens
-- [ ] Approve booking → status updates
-- [ ] Decline booking → status updates
-- [ ] Reset to pending → status reverts
-- [ ] Invite codes section visible
-- [ ] Generate invite code with note
-- [ ] Copy invite code to clipboard
-- [ ] Bulk select bookings → approve all → statuses update
-- [ ] Add admin note to booking → note persists on reload
-- [ ] Approve overlapping booking → warning modal appears
-- [ ] Session expires during use → redirects to login with "session expired" message
+- [x] Dashboard heading + stat tiles visible
+- [x] Bookings list loads with seeded data
+- [x] Filter by status (pending/approved/declined)
+- [x] Click booking → detail sidebar opens
+- [x] Approve booking → status updates
+- [x] Decline booking → status updates
+- [x] Reset to pending → status reverts
+- [x] Invite codes section visible
+- [x] Generate invite code with note
+- [x] Copy invite code to clipboard
+- [x] Bulk select bookings → approve all → statuses update
+- [x] Add admin note to booking → note persists on reload
+- [x] Approve overlapping booking → warning modal appears
+- [x] Session expires during use → redirects to login with "session expired" message
 
 ### 3.5 Admin API Routes (`e2e/admin-api.spec.ts`)
 
@@ -258,8 +258,8 @@ A full visual calendar in the admin panel showing all bookings and blackouts at 
 - [x] `/admin` → 302 redirect to `/login` (no session)
 - [x] `/api/admin/bookings` → 401 JSON (no session)
 - [x] `/api/admin/auth` → 403 (intentionally disabled)
-- [ ] Guest session → normal site access, no admin access
-- [ ] Admin session → full admin access
+- [x] Guest session → normal site access, no admin access
+- [x] Admin session → full admin access
 
 ### 3.7 Public API Routes (`e2e/public-api.spec.ts`)
 
@@ -275,36 +275,36 @@ A full visual calendar in the admin panel showing all bookings and blackouts at 
 
 - [x] Valid ref → shows booking status page with name, room, dates, status
 - [x] Invalid ref → 404 page
-- [ ] Approved booking → shows "You're in!" message
-- [ ] Pending booking → shows "Sit tight" message
-- [ ] Declined booking → shows "Sorry" message
+- [x] Approved booking → shows "You're in!" message
+- [x] Pending booking → shows "Sit tight" message
+- [x] Declined booking → shows "Sorry" message
 - [x] Does NOT expose private fields (why, travel, email)
-- [ ] Rate-limited: rapid requests get 429
-- [ ] Guest cancels pending booking → status changes to declined, page updates
-- [ ] Guest cancels approved booking → status changes, confirmation dialog shown first
-- [ ] Cancel button hidden on already-declined bookings
-- [ ] OG metadata renders correctly (check `<meta>` tags)
+- [x] Rate-limited: rapid requests get 429
+- [x] Guest cancels pending booking → status changes to declined, page updates
+- [x] Guest cancels approved booking → status changes, confirmation dialog shown first
+- [x] Cancel button hidden on already-declined bookings
+- [x] OG metadata renders correctly (check `<meta>` tags)
 
 ### 3.9 Health & Error Pages (`e2e/error-pages.spec.ts`)
 
 - [x] `GET /api/health` → `{ ok: true }` when DB is up
 - [x] Navigate to `/nonexistent-page` → custom 404 page with paper styling
 - [x] 404 page has link back to home
-- [ ] Error boundary catches runtime errors gracefully
+- [x] Error boundary catches runtime errors gracefully
 
 ### 3.10 Navigation & Layout (`e2e/navigation.spec.ts`)
 
 - [x] Nav bar renders after unlock (Rooms, About, Guestbook, Admin)
-- [ ] Active nav highlighting works
+- [x] Active nav highlighting works
 - [x] Admin link redirects appropriately
-- [ ] Back button on booking form works
-- [ ] Toast appears after booking submission
+- [x] Back button on booking form works
+- [x] Toast appears after booking submission
 
 ### 3.11 Responsive (`e2e/responsive.spec.ts`)
 
-- [ ] Mobile gate (375x667) renders without overflow
-- [ ] Mobile booking form — calendar is usable
-- [ ] Mobile admin panel — bookings list scrollable
+- [x] Mobile gate (375x667) renders without overflow
+- [x] Mobile booking form — calendar is usable
+- [x] Mobile admin panel — bookings list scrollable
 
 ### Test Infrastructure Notes
 

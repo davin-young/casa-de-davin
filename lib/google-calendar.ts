@@ -9,6 +9,7 @@ export interface CalendarEventInput {
   depart: string;
   why: string;
   travel: string;
+  activities: string;
   ref: string;
 }
 
@@ -63,6 +64,7 @@ export async function createBookingEvent(input: CalendarEventInput): Promise<Cal
     `Room: ${input.room}`,
     `Why: "${input.why}"`,
     input.travel ? `Travel: ${input.travel}` : '',
+    input.activities ? `Wants to do: ${input.activities}` : '',
     '',
     '— submitted via casadedavin.house',
   ].filter(Boolean).join('\n');

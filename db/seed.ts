@@ -78,6 +78,8 @@ async function main() {
   ]);
 
   console.log('Seeded 6 bookings.');
+
+
   await client.end();
   process.exit(0);
 }
