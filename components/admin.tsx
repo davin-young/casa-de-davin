@@ -23,6 +23,7 @@ interface BookingRecord {
 
 interface AdminPanelProps {
   onBack: () => void;
+  adminEmail?: string;
 }
 
 interface StatTileProps {
@@ -60,7 +61,7 @@ interface ActivityItem {
   what: string;
 }
 
-export default function AdminPanel({ onBack }: AdminPanelProps) {
+export default function AdminPanel({ onBack, adminEmail }: AdminPanelProps) {
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
   const [filter, setFilter] = useState<'all' | BookingStatus>('all');
   const [selected, setSelected] = useState<BookingRecord | null>(null);
@@ -198,6 +199,14 @@ export default function AdminPanel({ onBack }: AdminPanelProps) {
             <EmptyDetail/>
           )}
         </aside>
+      </div>
+
+      <div style={{ maxWidth: 1240, margin: '36px auto 0', padding: '0 40px' }}>
+        <InviteCodesSection />
+      </div>
+
+      <div style={{ maxWidth: 1240, margin: '36px auto 0', padding: '0 40px' }}>
+        <BlackoutDatesSection />
       </div>
 
       <div style={{ maxWidth: 1240, margin: '36px auto 0', padding: '0 40px' }}>
@@ -392,6 +401,386 @@ function EmptyDetail() {
     </div>
   );
 }
+
+interface InviteCode {
+  id: string;
+  code: string;
+  note: string | null;
+  createdAt: string;
+  redeemedAt: string | null;
+  redeemedBy: string | null;
+}
+
+function InviteCodesSection() {
+  const [codes, setCodes] = useState<InviteCode[]>([]);
+  const [note, setNote] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const fetchCodes = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/invites');
+      const data = await res.json() as { ok: boolean; codes?: InviteCode[] };
+      if (data.ok && data.codes) setCodes(data.codes);
+    } catch {
+      // silently fail
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchCodes(); }, [fetchCodes]);
+
+  const generate = async () => {
+    setGenerating(true);
+    try {
+      const res = await fetch('/api/admin/invites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ note: note.trim() || undefined }),
+      });
+      const data = await res.json() as { ok: boolean; codes?: InviteCode[] };
+      if (data.ok && data.codes) {
+        setCodes(prev => [...data.codes!, ...prev]);
+        setNote('');
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const copyCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopied(code);
+    setTimeout(() => setCopied(null), 1500);
+  };
+
+  const unused = codes.filter(c => !c.redeemedAt);
+  const used = codes.filter(c => c.redeemedAt);
+
+  return (
+    <section style={{
+      padding: '24px 26px',
+      background: 'var(--linen)',
+      border: '1.5px solid var(--umber-soft)',
+      borderRadius: '16px 6px 16px 6px',
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+        <div>
+          <SectionLabel>Invite codes</SectionLabel>
+          <div style={{ fontSize: 13, color: 'var(--ink-soft)', fontStyle: 'italic', fontFamily: 'var(--serif)', marginTop: 2 }}>
+            Generate one-time codes to share with friends.
+          </div>
+        </div>
+        <StatTile big={unused.length} label="available" accent="var(--moss)" />
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, marginBottom: 20, alignItems: 'center' }}>
+        <input
+          type="text"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="Note (e.g. 'for Kevin')"
+          style={{
+            flex: 1,
+            padding: '10px 14px',
+            fontSize: 14,
+            fontFamily: 'var(--sans)',
+            background: 'rgba(242,234,216,0.6)',
+            border: '1.5px dashed var(--umber-soft)',
+            borderRadius: '10px 4px 10px 4px',
+            color: 'var(--ink)',
+            outline: 'none',
+          }}
+        />
+        <MossButton onClick={generate} size="sm" disabled={generating}>
+          {generating ? 'Generating...' : 'Generate code'}
+        </MossButton>
+      </div>
+
+      {loading ? (
+        <div style={{ padding: 20, textAlign: 'center', color: 'var(--ink-soft)', fontStyle: 'italic', fontFamily: 'var(--serif)' }}>
+          Loading...
+        </div>
+      ) : codes.length === 0 ? (
+        <div style={{ padding: 20, textAlign: 'center', color: 'var(--ink-soft)', fontStyle: 'italic', fontFamily: 'var(--serif)' }}>
+          No codes yet. Generate one above.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {unused.map(c => (
+            <div key={c.id} style={{
+              display: 'flex', alignItems: 'center', gap: 14,
+              padding: '10px 14px',
+              background: 'rgba(90,125,58,0.06)',
+              border: '1px dashed var(--umber-soft)',
+              borderRadius: '10px 4px 10px 4px',
+            }}>
+              <span style={{
+                fontFamily: 'var(--mono)',
+                fontSize: 18,
+                fontWeight: 600,
+                letterSpacing: '0.15em',
+                color: 'var(--moss)',
+              }}>{c.code}</span>
+              {c.note && <span style={{ fontSize: 13, color: 'var(--ink-soft)', fontStyle: 'italic', fontFamily: 'var(--serif)' }}>{c.note}</span>}
+              <span style={{ flex: 1 }} />
+              <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>{formatRelative(c.createdAt)}</span>
+              <button onClick={() => copyCode(c.code)} style={{
+                background: copied === c.code ? 'var(--moss)' : 'transparent',
+                border: `1.5px solid ${copied === c.code ? 'var(--moss)' : 'var(--umber-soft)'}`,
+                color: copied === c.code ? 'var(--oat)' : 'var(--ink-soft)',
+                padding: '4px 10px',
+                borderRadius: '6px 2px 6px 2px',
+                fontSize: 11,
+                fontFamily: 'var(--sans)',
+                fontWeight: 500,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}>
+                {copied === c.code ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+          ))}
+          {used.length > 0 && (
+            <>
+              <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--umber)', marginTop: 12, marginBottom: 4 }}>
+                Used ({used.length})
+              </div>
+              {used.map(c => (
+                <div key={c.id} style={{
+                  display: 'flex', alignItems: 'center', gap: 14,
+                  padding: '8px 14px',
+                  opacity: 0.5,
+                }}>
+                  <span style={{
+                    fontFamily: 'var(--mono)',
+                    fontSize: 14,
+                    letterSpacing: '0.15em',
+                    color: 'var(--ink-soft)',
+                    textDecoration: 'line-through',
+                  }}>{c.code}</span>
+                  {c.note && <span style={{ fontSize: 12, color: 'var(--ink-soft)', fontStyle: 'italic' }}>{c.note}</span>}
+                  <span style={{ flex: 1 }} />
+                  <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>
+                    used {c.redeemedAt ? formatRelative(c.redeemedAt) : ''}
+                  </span>
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+interface BlackoutRecord {
+  id: string;
+  startDate: string;
+  endDate: string;
+  label: string;
+  room: 'couch' | 'bedroom' | null;
+  createdAt: string;
+}
+
+function BlackoutDatesSection() {
+  const [blackouts, setBlackouts] = useState<BlackoutRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [label, setLabel] = useState('');
+  const [room, setRoom] = useState<'couch' | 'bedroom' | ''>('');
+  const [adding, setAdding] = useState(false);
+
+  const fetchBlackouts = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/blackouts');
+      const data = await res.json() as { ok: boolean; blackouts?: BlackoutRecord[] };
+      if (data.ok && data.blackouts) setBlackouts(data.blackouts);
+    } catch {
+      // silently fail
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchBlackouts(); }, [fetchBlackouts]);
+
+  const addBlackout = async () => {
+    if (!startDate || !endDate || !label.trim()) return;
+    setAdding(true);
+    try {
+      const res = await fetch('/api/admin/blackouts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          startDate,
+          endDate,
+          label: label.trim(),
+          room: room || null,
+        }),
+      });
+      const data = await res.json() as { ok: boolean; blackout?: BlackoutRecord };
+      if (data.ok && data.blackout) {
+        setBlackouts(prev => [data.blackout!, ...prev]);
+        setStartDate('');
+        setEndDate('');
+        setLabel('');
+        setRoom('');
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const deleteBlackout = async (id: string) => {
+    try {
+      const res = await fetch(`/api/admin/blackouts/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setBlackouts(prev => prev.filter(b => b.id !== id));
+      }
+    } catch {
+      // silently fail
+    }
+  };
+
+  return (
+    <section style={{
+      padding: '24px 26px',
+      background: 'var(--linen)',
+      border: '1.5px solid var(--umber-soft)',
+      borderRadius: '16px 6px 16px 6px',
+    }}>
+      <div style={{ marginBottom: 18 }}>
+        <SectionLabel>Blackout dates</SectionLabel>
+        <div style={{ fontSize: 13, color: 'var(--ink-soft)', fontStyle: 'italic', fontFamily: 'var(--serif)', marginTop: 2 }}>
+          Block off dates when the apartment is unavailable.
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, marginBottom: 20, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--umber)', marginBottom: 4 }}>Start</div>
+          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
+            style={dateInputStyle} />
+        </div>
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--umber)', marginBottom: 4 }}>End</div>
+          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)}
+            style={dateInputStyle} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--umber)', marginBottom: 4 }}>Reason</div>
+          <input type="text" value={label} onChange={(e) => setLabel(e.target.value)}
+            placeholder="e.g. Out of town"
+            style={{
+              width: '100%',
+              padding: '10px 14px',
+              fontSize: 14,
+              fontFamily: 'var(--sans)',
+              background: 'rgba(242,234,216,0.6)',
+              border: '1.5px dashed var(--umber-soft)',
+              borderRadius: '10px 4px 10px 4px',
+              color: 'var(--ink)',
+              outline: 'none',
+            }} />
+        </div>
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--umber)', marginBottom: 4 }}>Room</div>
+          <select value={room} onChange={(e) => setRoom(e.target.value as typeof room)}
+            style={{
+              padding: '10px 14px',
+              fontSize: 14,
+              fontFamily: 'var(--sans)',
+              background: 'rgba(242,234,216,0.6)',
+              border: '1.5px dashed var(--umber-soft)',
+              borderRadius: '10px 4px 10px 4px',
+              color: 'var(--ink)',
+              outline: 'none',
+            }}>
+            <option value="">Both rooms</option>
+            <option value="couch">Couch only</option>
+            <option value="bedroom">Bedroom only</option>
+          </select>
+        </div>
+        <MossButton onClick={addBlackout} size="sm" disabled={adding || !startDate || !endDate || !label.trim()}>
+          {adding ? 'Adding...' : 'Add blackout'}
+        </MossButton>
+      </div>
+
+      {loading ? (
+        <div style={{ padding: 20, textAlign: 'center', color: 'var(--ink-soft)', fontStyle: 'italic', fontFamily: 'var(--serif)' }}>
+          Loading...
+        </div>
+      ) : blackouts.length === 0 ? (
+        <div style={{ padding: 20, textAlign: 'center', color: 'var(--ink-soft)', fontStyle: 'italic', fontFamily: 'var(--serif)' }}>
+          No blackout dates set. The calendar is wide open.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {blackouts.map(b => (
+            <div key={b.id} style={{
+              display: 'flex', alignItems: 'center', gap: 14,
+              padding: '10px 14px',
+              background: 'rgba(122,62,42,0.04)',
+              border: '1px dashed var(--umber-soft)',
+              borderRadius: '10px 4px 10px 4px',
+            }}>
+              <span style={{ fontFamily: 'var(--serif)', fontSize: 14, color: 'var(--ink)' }}>
+                {fmtShort(b.startDate)} → {fmtShort(b.endDate)}
+              </span>
+              <span style={{ fontSize: 13, color: 'var(--ink-soft)', fontStyle: 'italic', fontFamily: 'var(--serif)' }}>
+                {b.label}
+              </span>
+              {b.room && (
+                <span style={{
+                  fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase',
+                  padding: '2px 8px',
+                  background: b.room === 'couch' ? 'rgba(228,169,75,0.2)' : 'rgba(90,125,58,0.15)',
+                  borderRadius: '4px 2px 4px 2px',
+                  color: 'var(--ink-soft)',
+                }}>
+                  {b.room}
+                </span>
+              )}
+              <span style={{ flex: 1 }} />
+              <button onClick={() => deleteBlackout(b.id)} style={{
+                background: 'transparent',
+                border: '1.5px solid var(--umber-soft)',
+                color: 'var(--terracotta)',
+                padding: '4px 10px',
+                borderRadius: '6px 2px 6px 2px',
+                fontSize: 11,
+                fontFamily: 'var(--sans)',
+                fontWeight: 500,
+                cursor: 'pointer',
+              }}>
+                Delete
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+const dateInputStyle: React.CSSProperties = {
+  padding: '10px 14px',
+  fontSize: 14,
+  fontFamily: 'var(--sans)',
+  background: 'rgba(242,234,216,0.6)',
+  border: '1.5px dashed var(--umber-soft)',
+  borderRadius: '10px 4px 10px 4px',
+  color: 'var(--ink)',
+  outline: 'none',
+};
 
 function ActivityStrip() {
   const items: ActivityItem[] = [

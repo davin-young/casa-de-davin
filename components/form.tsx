@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, ArrowRight, HouseGlyph, CouchGlyph, BedGlyph } from './icons';
 import { PaperSurface, MossButton, SectionLabel, SprigDivider, UnderlineInput, UnderlineTextarea } from './shared';
 import { PleaButton } from './silly';
@@ -33,9 +33,18 @@ interface SummaryRowProps {
   value: React.ReactNode;
 }
 
+export interface BlockedDate {
+  start: string;
+  end: string;
+  room: 'couch' | 'bedroom' | null;
+  type: 'booking' | 'blackout';
+  label?: string;
+}
+
 interface GardenCalendarProps {
   range: DateRange;
   onChange: (range: DateRange) => void;
+  blockedDates?: BlockedDate[];
 }
 
 interface DayCellProps {
@@ -63,12 +72,6 @@ interface LegendDotProps {
   border?: string;
 }
 
-interface BlackoutPeriod {
-  start: Date;
-  end: Date;
-  label: string;
-}
-
 interface RoomMeta {
   title: string;
   glyph: React.ReactNode;
@@ -85,6 +88,16 @@ export default function BookingForm({ room, onBack, onSubmit, silly = false }: B
   const [activities, setActivities] = useState('');
   const [dateWarning, setDateWarning] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [blockedDates, setBlockedDates] = useState<BlockedDate[]>([]);
+
+  useEffect(() => {
+    fetch(`/api/blocked-dates?room=${room}`)
+      .then(r => r.json())
+      .then((data: { ok: boolean; blocked?: BlockedDate[] }) => {
+        if (data.ok && data.blocked) setBlockedDates(data.blocked);
+      })
+      .catch(() => {});
+  }, [room]);
 
   const validate = (r: DateRange): string | null => {
     if (!r.start) return null;
@@ -214,7 +227,7 @@ export default function BookingForm({ room, onBack, onSubmit, silly = false }: B
               }}>
                 When are you inflicting yourself on me?
               </div>
-              <GardenCalendar range={range} onChange={handleRangeChange}/>
+              <GardenCalendar range={range} onChange={handleRangeChange} blockedDates={blockedDates}/>
               {dateWarning && (
                 <div style={{
                   marginTop: 12,
@@ -389,19 +402,21 @@ function fmtDate(d: Date): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' });
 }
 
-function GardenCalendar({ range, onChange }: GardenCalendarProps) {
+function GardenCalendar({ range, onChange, blockedDates = [] }: GardenCalendarProps) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const minDate = new Date(2026, 5, 11);
   minDate.setHours(0, 0, 0, 0);
   const earliest = today > minDate ? today : minDate;
 
-  const BLACKOUTS: BlackoutPeriod[] = [
-    { start: new Date(2026, 6, 3), end: new Date(2026, 6, 5), label: 'Marcus (bedroom)' },
-    { start: new Date(2026, 6, 11), end: new Date(2026, 6, 13), label: 'Sana (couch)' },
-    { start: new Date(2026, 7, 14), end: new Date(2026, 7, 20), label: 'Davin out of town' },
-  ];
-  const isBlackout = (d: Date): boolean => BLACKOUTS.some(b => d >= b.start && d <= b.end);
+  const isBlackout = (d: Date): boolean => {
+    const iso = d.toISOString().split('T')[0];
+    return blockedDates.some(b => iso >= b.start && iso <= b.end);
+  };
+  const isBookedBlackout = (d: Date): boolean => {
+    const iso = d.toISOString().split('T')[0];
+    return blockedDates.some(b => b.type === 'booking' && iso >= b.start && iso <= b.end);
+  };
 
   const [monthCursor, setMonthCursor] = useState<Date>(() => new Date(earliest.getFullYear(), earliest.getMonth(), 1));
 

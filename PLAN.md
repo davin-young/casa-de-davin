@@ -116,38 +116,38 @@ Guests receive a confirmation ref like `CDD-A7X2K` after booking. They should be
 
 ### 2.1 Database: `blackout_dates` Table
 
-- [ ] Add to `db/schema.ts`: `id` (uuid), `startDate` (text ISO), `endDate` (text ISO), `label` (text), `room` (nullable room enum — null = both rooms), `createdAt` (timestamp)
-- [ ] Generate + run migration
+- [x] Add to `db/schema.ts`: `id` (uuid), `startDate` (text ISO), `endDate` (text ISO), `label` (text), `room` (nullable room enum — null = both rooms), `createdAt` (timestamp)
+- [x] Generate + run migration
 
 ### 2.2 Public API: Blocked Dates
 
-- [ ] **`GET /api/blocked-dates`** — Public (guests need it). Merges:
+- [x] **`GET /api/blocked-dates`** — Public (guests need it). Merges:
   - Approved bookings → `{ start, end, room, type: 'booking' }`
   - Blackout dates → `{ start, end, room, label, type: 'blackout' }`
   - Optional `?room=couch&from=2026-06-01&to=2026-09-30` params
 
 ### 2.3 Admin CRUD: Blackout Dates
 
-- [ ] **`GET/POST /api/admin/blackouts`** — List all / create new blackout period
-- [ ] **`DELETE /api/admin/blackouts/[id]`** — Remove a blackout
+- [x] **`GET/POST /api/admin/blackouts`** — List all / create new blackout period
+- [x] **`DELETE /api/admin/blackouts/[id]`** — Remove a blackout
 
 ### 2.4 Calendar Component Refactor
 
-- [ ] **Remove hardcoded `BLACKOUTS` array** from `components/form.tsx`
-- [ ] Accept `blockedDates` as prop, fetched from `/api/blocked-dates`
+- [x] **Remove hardcoded `BLACKOUTS` array** from `components/form.tsx`
+- [x] Accept `blockedDates` as prop, fetched from `/api/blocked-dates`
 - [ ] Differentiate visuals: booked (hatched/"taken") vs admin blackout (gray/"unavailable")
-- [ ] Room-specific: couch bookings only block couch calendar, etc. Blackouts with `room: null` block both.
+- [x] Room-specific: couch bookings only block couch calendar, etc. Blackouts with `room: null` block both.
 
 ### 2.5 Server-Side Overlap Validation
 
-- [ ] In `POST /api/book`, after basic validation, check requested dates don't overlap with approved bookings (same room) or any blackout dates
-- [ ] Return 409 Conflict if overlap: `"Those dates are already taken."`
+- [x] In `POST /api/book`, after basic validation, check requested dates don't overlap with approved bookings (same room) or any blackout dates
+- [x] Return 409 Conflict if overlap: `"Those dates are already taken."`
 
 ### 2.6 Admin UI: Blackout Management
 
-- [ ] New `BlackoutDatesSection` in admin panel (similar to `InviteCodesSection`)
-- [ ] List current blackouts with date range, label, room, delete button
-- [ ] "Add blackout" form: start date, end date, label, optional room
+- [x] New `BlackoutDatesSection` in admin panel (similar to `InviteCodesSection`)
+- [x] List current blackouts with date range, label, room, delete button
+- [x] "Add blackout" form: start date, end date, label, optional room
 ### 2.7 Admin Calendar View
 
 A full visual calendar in the admin panel showing all bookings and blackouts at a glance — the host's primary tool for understanding availability.

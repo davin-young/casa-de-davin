@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { bookings } from '@/db/schema';
+import { bookings, blackoutDates } from '@/db/schema';
 import { createBookingEvent } from '@/lib/google-calendar';
 import { sendBookingNotification } from '@/lib/email';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { eq } from 'drizzle-orm';
+import { eq, and, lt, gt, or, isNull } from 'drizzle-orm';
 
 interface BookingRequest {
   name: string;
@@ -84,6 +84,43 @@ export async function POST(request: NextRequest): Promise<NextResponse<BookingRe
     const trimmedEmail = email?.trim() || null;
     if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
       return NextResponse.json({ ok: false as const, error: 'Invalid email address.' }, { status: 400 });
+    }
+
+    // Check for overlap with approved bookings (same room)
+    const overlappingBookings = await db
+      .select({ id: bookings.id })
+      .from(bookings)
+      .where(and(
+        eq(bookings.room, room),
+        eq(bookings.status, 'approved'),
+        lt(bookings.arrive, depart),
+        gt(bookings.depart, arrive),
+      ))
+      .limit(1);
+
+    if (overlappingBookings.length > 0) {
+      return NextResponse.json(
+        { ok: false as const, error: 'Those dates are already taken for this room.' },
+        { status: 409 },
+      );
+    }
+
+    // Check for overlap with blackout dates (same room or both rooms)
+    const overlappingBlackouts = await db
+      .select({ id: blackoutDates.id })
+      .from(blackoutDates)
+      .where(and(
+        or(eq(blackoutDates.room, room), isNull(blackoutDates.room)),
+        lt(blackoutDates.startDate, depart),
+        gt(blackoutDates.endDate, arrive),
+      ))
+      .limit(1);
+
+    if (overlappingBlackouts.length > 0) {
+      return NextResponse.json(
+        { ok: false as const, error: 'Those dates are unavailable.' },
+        { status: 409 },
+      );
     }
 
     // Insert into database
