@@ -1,0 +1,1 @@
+ALTER TABLE "bookings" ADD COLUMN "activities" text DEFAULT '' NOT NULL;

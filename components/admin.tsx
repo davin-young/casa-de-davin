@@ -17,6 +17,8 @@ interface BookingRecord {
   status: BookingStatus;
   why: string;
   travel: string;
+  email: string | null;
+  notes: string | null;
   calendarEventId: string | null;
   createdAt: string;
   updatedAt: string;
@@ -36,7 +38,9 @@ interface StatTileProps {
 interface BookingRowProps {
   booking: BookingRecord;
   selected: boolean;
+  checked: boolean;
   onSelect: () => void;
+  onToggleCheck: () => void;
   last: boolean;
 }
 
@@ -47,7 +51,10 @@ interface StatusPillProps {
 
 interface BookingDetailProps {
   booking: BookingRecord;
+  allBookings: BookingRecord[];
   onUpdate: (id: string, status: BookingStatus) => void;
+  onDelete: (id: string) => void;
+  onNotesUpdate: (id: string, notes: string) => void;
   onClose: () => void;
 }
 
@@ -76,10 +83,19 @@ export default function AdminPanel({ onBack, adminEmail }: AdminPanelProps) {
   const [filter, setFilter] = useState<'all' | BookingStatus>('all');
   const [selected, setSelected] = useState<BookingRecord | null>(null);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
+
+  const handleAuthError = useCallback((res: Response) => {
+    if (res.status === 401) {
+      window.location.href = '/login?auth_error=session_expired';
+    }
+  }, []);
 
   const fetchBookings = useCallback(async () => {
     try {
       const res = await fetch('/api/admin/bookings');
+      handleAuthError(res);
       const data = await res.json() as { ok: boolean; bookings?: BookingRecord[]; error?: string };
       if (data.ok && data.bookings) {
         setBookings(data.bookings);
@@ -89,19 +105,28 @@ export default function AdminPanel({ onBack, adminEmail }: AdminPanelProps) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [handleAuthError]);
 
   const fetchCalBlackouts = useCallback(async () => {
     try {
       const res = await fetch('/api/admin/blackouts');
+      handleAuthError(res);
       const data = await res.json() as { ok: boolean; blackouts?: CalendarBlackout[] };
       if (data.ok && data.blackouts) setCalBlackouts(data.blackouts);
     } catch {}
-  }, []);
+  }, [handleAuthError]);
 
   useEffect(() => { fetchBookings(); fetchCalBlackouts(); }, [fetchBookings, fetchCalBlackouts]);
 
-  const filtered = filter === 'all' ? bookings : bookings.filter(b => b.status === filter);
+  // Search + filter
+  const searchLower = search.toLowerCase();
+  const searched = search
+    ? bookings.filter(b =>
+        b.name.toLowerCase().includes(searchLower) ||
+        b.ref.toLowerCase().includes(searchLower) ||
+        b.why.toLowerCase().includes(searchLower))
+    : bookings;
+  const filtered = filter === 'all' ? searched : searched.filter(b => b.status === filter);
   const counts: Record<'all' | BookingStatus, number> = {
     all: bookings.length,
     pending: bookings.filter(b => b.status === 'pending').length,
@@ -116,6 +141,7 @@ export default function AdminPanel({ onBack, adminEmail }: AdminPanelProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       });
+      handleAuthError(res);
       if (res.ok) {
         setBookings(bs => bs.map(b => b.id === id ? { ...b, status } : b));
         if (selected?.id === id) setSelected({ ...selected, status });
@@ -123,6 +149,55 @@ export default function AdminPanel({ onBack, adminEmail }: AdminPanelProps) {
     } catch {
       // silently fail
     }
+  };
+
+  const deleteBooking = async (id: string) => {
+    try {
+      const res = await fetch(`/api/admin/bookings/${id}`, { method: 'DELETE' });
+      handleAuthError(res);
+      if (res.ok) {
+        setBookings(bs => bs.filter(b => b.id !== id));
+        if (selected?.id === id) setSelected(null);
+        setCheckedIds(prev => { const next = new Set(prev); next.delete(id); return next; });
+      }
+    } catch {}
+  };
+
+  const updateNotes = async (id: string, notes: string) => {
+    try {
+      const res = await fetch(`/api/admin/bookings/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes: notes || null }),
+      });
+      handleAuthError(res);
+      if (res.ok) {
+        setBookings(bs => bs.map(b => b.id === id ? { ...b, notes: notes || null } : b));
+        if (selected?.id === id) setSelected({ ...selected, notes: notes || null });
+      }
+    } catch {}
+  };
+
+  const toggleCheck = (id: string) => {
+    setCheckedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const bulkAction = async (action: 'approve' | 'decline' | 'delete') => {
+    const ids = Array.from(checkedIds);
+    for (const id of ids) {
+      if (action === 'delete') await deleteBooking(id);
+      else await updateStatus(id, action === 'approve' ? 'approved' : 'declined');
+    }
+    setCheckedIds(new Set());
+  };
+
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    window.location.href = '/login';
   };
 
   return (
@@ -149,6 +224,24 @@ export default function AdminPanel({ onBack, adminEmail }: AdminPanelProps) {
             background: 'var(--umber)', color: 'var(--oat)',
             borderRadius: '6px 2px 6px 2px',
           }}>admin</span>
+          {adminEmail && (
+            <span style={{ fontSize: 11, color: 'var(--ink-soft)', fontStyle: 'italic', marginLeft: 6 }}>
+              {adminEmail}
+            </span>
+          )}
+          <button onClick={handleLogout} style={{
+            background: 'transparent',
+            border: '1px dashed var(--umber-soft)',
+            color: 'var(--ink-soft)',
+            padding: '4px 10px',
+            borderRadius: '6px 2px 6px 2px',
+            fontSize: 11,
+            fontFamily: 'var(--sans)',
+            cursor: 'pointer',
+            marginLeft: 4,
+          }}>
+            Sign out
+          </button>
         </div>
       </div>
 
@@ -169,7 +262,7 @@ export default function AdminPanel({ onBack, adminEmail }: AdminPanelProps) {
 
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 40px', display: 'grid', gridTemplateColumns: '1fr 420px', gap: 32, alignItems: 'flex-start' }}>
         <div>
-          <div style={{ display: 'flex', gap: 6, marginBottom: 18, alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 12, alignItems: 'center' }}>
             {(['all', 'pending', 'approved', 'declined'] as const).map(f => (
               <button key={f} onClick={() => setFilter(f)}
                 style={{
@@ -193,6 +286,43 @@ export default function AdminPanel({ onBack, adminEmail }: AdminPanelProps) {
             </span>
           </div>
 
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name, ref, or reason..."
+            style={{
+              width: '100%',
+              padding: '10px 14px',
+              fontSize: 14,
+              fontFamily: 'var(--sans)',
+              background: 'rgba(242,234,216,0.6)',
+              border: '1.5px dashed var(--umber-soft)',
+              borderRadius: '10px 4px 10px 4px',
+              color: 'var(--ink)',
+              outline: 'none',
+              marginBottom: 12,
+            }}
+          />
+
+          {checkedIds.size > 0 && (
+            <div style={{
+              display: 'flex', gap: 8, marginBottom: 12, padding: '10px 14px',
+              background: 'rgba(228,169,75,0.15)',
+              border: '1px dashed var(--honey)',
+              borderRadius: '10px 4px 10px 4px',
+              alignItems: 'center',
+            }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)' }}>
+                {checkedIds.size} selected
+              </span>
+              <span style={{ flex: 1 }} />
+              <MossButton onClick={() => bulkAction('approve')} size="sm">Approve all</MossButton>
+              <MossButton onClick={() => bulkAction('decline')} variant="secondary" size="sm">Decline all</MossButton>
+              <MossButton onClick={() => bulkAction('delete')} variant="ghost" size="sm">Delete all</MossButton>
+            </div>
+          )}
+
           <div style={{
             background: 'var(--linen)',
             border: '1.5px solid var(--umber-soft)',
@@ -205,14 +335,14 @@ export default function AdminPanel({ onBack, adminEmail }: AdminPanelProps) {
               </div>
             )}
             {filtered.map((b, i) => (
-              <BookingRow key={b.id} booking={b} selected={selected?.id === b.id} onSelect={() => setSelected(b)} last={i === filtered.length - 1}/>
+              <BookingRow key={b.id} booking={b} selected={selected?.id === b.id} checked={checkedIds.has(b.id)} onSelect={() => setSelected(b)} onToggleCheck={() => toggleCheck(b.id)} last={i === filtered.length - 1}/>
             ))}
           </div>
         </div>
 
         <aside style={{ position: 'sticky', top: 20 }}>
           {selected ? (
-            <BookingDetail booking={selected} onUpdate={updateStatus} onClose={() => setSelected(null)}/>
+            <BookingDetail booking={selected} allBookings={bookings} onUpdate={updateStatus} onDelete={deleteBooking} onNotesUpdate={updateNotes} onClose={() => setSelected(null)}/>
           ) : (
             <EmptyDetail/>
           )}
@@ -236,7 +366,7 @@ export default function AdminPanel({ onBack, adminEmail }: AdminPanelProps) {
       </div>
 
       <div style={{ maxWidth: 1240, margin: '36px auto 0', padding: '0 40px' }}>
-        <ActivityStrip/>
+        <ActivityStrip bookings={bookings}/>
       </div>
     </PaperSurface>
   );
@@ -260,7 +390,7 @@ function StatTile({ big, label, accent }: StatTileProps) {
   );
 }
 
-function BookingRow({ booking, selected, onSelect, last }: BookingRowProps) {
+function BookingRow({ booking, selected, checked, onSelect, onToggleCheck, last }: BookingRowProps) {
   const statusColor: Record<BookingStatus, string> = {
     pending: 'var(--honey)',
     approved: 'var(--moss)',
@@ -271,14 +401,21 @@ function BookingRow({ booking, selected, onSelect, last }: BookingRowProps) {
     <div onClick={onSelect} style={{
       padding: '16px 20px',
       borderBottom: last ? 'none' : '1px dashed var(--umber-soft)',
-      background: selected ? 'rgba(228,169,75,0.18)' : 'transparent',
+      background: selected ? 'rgba(228,169,75,0.18)' : checked ? 'rgba(90,125,58,0.08)' : 'transparent',
       cursor: 'pointer',
       display: 'grid',
-      gridTemplateColumns: '1.2fr 1fr 0.8fr 0.6fr auto',
+      gridTemplateColumns: 'auto 1.2fr 1fr 0.8fr 0.6fr auto',
       gap: 14,
       alignItems: 'center',
       transition: 'background 160ms ease',
     }}>
+      <input
+        type="checkbox"
+        checked={checked}
+        onClick={(e) => e.stopPropagation()}
+        onChange={onToggleCheck}
+        style={{ width: 16, height: 16, cursor: 'pointer', accentColor: 'var(--moss)' }}
+      />
       <div>
         <div style={{ fontFamily: 'var(--serif)', fontSize: 18, fontWeight: 500, color: 'var(--ink)' }}>{booking.name}</div>
         <div style={{ fontSize: 11, color: 'var(--ink-soft)', fontStyle: 'italic', marginTop: 2 }}>submitted {formatRelative(booking.createdAt)}</div>
@@ -315,7 +452,48 @@ function StatusPill({ status, color }: StatusPillProps) {
   );
 }
 
-function BookingDetail({ booking, onUpdate, onClose }: BookingDetailProps) {
+function BookingDetail({ booking, allBookings, onUpdate, onDelete, onNotesUpdate, onClose }: BookingDetailProps) {
+  const [notesText, setNotesText] = useState(booking.notes || '');
+  const [notesSaved, setNotesSaved] = useState(false);
+  const [overlapWarning, setOverlapWarning] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  // Reset notes when booking changes
+  useEffect(() => {
+    setNotesText(booking.notes || '');
+    setNotesSaved(false);
+    setOverlapWarning(null);
+    setConfirmDelete(false);
+  }, [booking.id, booking.notes]);
+
+  const saveNotes = () => {
+    onNotesUpdate(booking.id, notesText);
+    setNotesSaved(true);
+    setTimeout(() => setNotesSaved(false), 1500);
+  };
+
+  const handleApprove = () => {
+    // Check for overlapping approved bookings
+    const overlaps = allBookings.filter(b =>
+      b.id !== booking.id &&
+      b.room === booking.room &&
+      b.status === 'approved' &&
+      b.arrive < booking.depart &&
+      b.depart > booking.arrive
+    );
+    if (overlaps.length > 0) {
+      const overlap = overlaps[0];
+      setOverlapWarning(`This overlaps with ${overlap.name} on ${fmtShort(overlap.arrive)}–${fmtShort(overlap.depart)}. Approve anyway?`);
+    } else {
+      onUpdate(booking.id, 'approved');
+    }
+  };
+
+  const confirmApprove = () => {
+    setOverlapWarning(null);
+    onUpdate(booking.id, 'approved');
+  };
+
   return (
     <div style={{
       background: 'var(--linen)',
@@ -336,7 +514,7 @@ function BookingDetail({ booking, onUpdate, onClose }: BookingDetailProps) {
         {booking.name}
       </h2>
       <div style={{ fontSize: 12, color: 'var(--ink-soft)', fontStyle: 'italic', marginBottom: 18 }}>
-        requested {formatRelative(booking.createdAt)}
+        requested {formatRelative(booking.createdAt)} &middot; {booking.ref}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 20px', marginBottom: 18 }}>
@@ -372,11 +550,67 @@ function BookingDetail({ booking, onUpdate, onClose }: BookingDetailProps) {
         </div>
       )}
 
+      {/* Admin notes */}
+      <div style={{ marginTop: 14 }}>
+        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--umber)', marginBottom: 4 }}>
+          Private notes
+        </div>
+        <textarea
+          value={notesText}
+          onChange={(e) => setNotesText(e.target.value)}
+          placeholder="e.g. bringing a dog, needs parking info..."
+          rows={2}
+          style={{
+            width: '100%',
+            padding: '10px 12px',
+            fontSize: 13,
+            fontFamily: 'var(--serif)',
+            background: 'rgba(242,234,216,0.5)',
+            border: '1px dashed var(--umber-soft)',
+            borderRadius: '8px 3px 8px 3px',
+            color: 'var(--ink)',
+            resize: 'vertical',
+            outline: 'none',
+          }}
+        />
+        <button onClick={saveNotes} style={{
+          marginTop: 4,
+          background: notesSaved ? 'var(--moss)' : 'transparent',
+          border: `1px solid ${notesSaved ? 'var(--moss)' : 'var(--umber-soft)'}`,
+          color: notesSaved ? 'var(--oat)' : 'var(--ink-soft)',
+          padding: '3px 10px',
+          borderRadius: '6px 2px 6px 2px',
+          fontSize: 11,
+          fontFamily: 'var(--sans)',
+          cursor: 'pointer',
+        }}>
+          {notesSaved ? 'Saved!' : 'Save notes'}
+        </button>
+      </div>
+
       <SprigDivider/>
+
+      {/* Overlap warning */}
+      {overlapWarning && (
+        <div style={{
+          marginTop: 14, padding: '12px 14px',
+          background: 'rgba(228,169,75,0.2)',
+          border: '1px dashed var(--honey)',
+          borderRadius: '10px 4px 10px 4px',
+        }}>
+          <p style={{ fontFamily: 'var(--serif)', fontSize: 14, color: 'var(--ink)', margin: '0 0 8px' }}>
+            {overlapWarning}
+          </p>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <MossButton onClick={confirmApprove} size="sm">Yes, approve anyway</MossButton>
+            <MossButton onClick={() => setOverlapWarning(null)} variant="ghost" size="sm">Cancel</MossButton>
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: 8, marginTop: 18, flexWrap: 'wrap' }}>
         {booking.status !== 'approved' && (
-          <MossButton onClick={() => onUpdate(booking.id, 'approved')} size="sm">
+          <MossButton onClick={handleApprove} size="sm">
             <CheckIcon size={14}/> Approve
           </MossButton>
         )}
@@ -389,6 +623,48 @@ function BookingDetail({ booking, onUpdate, onClose }: BookingDetailProps) {
           <MossButton onClick={() => onUpdate(booking.id, 'pending')} variant="ghost" size="sm">
             Reset to pending
           </MossButton>
+        )}
+      </div>
+
+      {/* Delete */}
+      <div style={{ marginTop: 14 }}>
+        {confirmDelete ? (
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <span style={{ fontSize: 12, color: 'var(--terracotta)' }}>Delete permanently?</span>
+            <button onClick={() => onDelete(booking.id)} style={{
+              background: 'var(--terracotta)',
+              border: 'none',
+              color: 'var(--oat)',
+              padding: '4px 10px',
+              borderRadius: '6px 2px 6px 2px',
+              fontSize: 11,
+              fontFamily: 'var(--sans)',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}>Yes, delete</button>
+            <button onClick={() => setConfirmDelete(false)} style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--ink-soft)',
+              fontSize: 11,
+              cursor: 'pointer',
+            }}>Cancel</button>
+          </div>
+        ) : (
+          <button onClick={() => setConfirmDelete(true)} style={{
+            background: 'transparent',
+            border: 'none',
+            color: 'var(--terracotta)',
+            fontFamily: 'var(--serif)',
+            fontSize: 12,
+            fontStyle: 'italic',
+            cursor: 'pointer',
+            padding: 0,
+            textDecoration: 'underline',
+            textUnderlineOffset: 3,
+          }}>
+            Delete this booking
+          </button>
         )}
       </div>
 
@@ -479,9 +755,19 @@ function InviteCodesSection() {
   };
 
   const copyCode = (code: string) => {
-    navigator.clipboard.writeText(code);
+    const url = `${window.location.origin}?code=${code}`;
+    navigator.clipboard.writeText(url);
     setCopied(code);
     setTimeout(() => setCopied(null), 1500);
+  };
+
+  const revokeCode = async (id: string) => {
+    try {
+      const res = await fetch(`/api/admin/invites/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setCodes(prev => prev.filter(c => c.id !== id));
+      }
+    } catch {}
   };
 
   const unused = codes.filter(c => !c.redeemedAt);
@@ -567,7 +853,20 @@ function InviteCodesSection() {
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
               }}>
-                {copied === c.code ? 'Copied!' : 'Copy'}
+                {copied === c.code ? 'Copied!' : 'Copy URL'}
+              </button>
+              <button onClick={() => revokeCode(c.id)} style={{
+                background: 'transparent',
+                border: '1px solid var(--umber-soft)',
+                color: 'var(--terracotta)',
+                padding: '4px 10px',
+                borderRadius: '6px 2px 6px 2px',
+                fontSize: 11,
+                fontFamily: 'var(--sans)',
+                fontWeight: 500,
+                cursor: 'pointer',
+              }}>
+                Revoke
               </button>
             </div>
           ))}
@@ -808,14 +1107,25 @@ const dateInputStyle: React.CSSProperties = {
   outline: 'none',
 };
 
-function ActivityStrip() {
-  const items: ActivityItem[] = [
-    { when: '2m ago', who: 'Kevin', what: 'submitted a request for the bedroom' },
-    { when: '1h ago', who: 'Priya', what: 'submitted a request for the couch' },
-    { when: 'yesterday', who: 'you', what: 'approved Marcus (bedroom · Jul 3–5)' },
-    { when: '3 days ago', who: 'you', what: 'approved Sana (couch · Jul 11–13)' },
-    { when: '5 days ago', who: 'you', what: 'declined Leo (vibes insufficient)' },
-  ];
+function ActivityStrip({ bookings }: { bookings: BookingRecord[] }) {
+  // Derive activity from bookings, sorted by most recent update
+  const items: ActivityItem[] = [...bookings]
+    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+    .slice(0, 8)
+    .map(b => {
+      const room = b.room === 'couch' ? 'couch' : 'bedroom';
+      const dates = `${fmtShort(b.arrive)}–${fmtShort(b.depart)}`;
+      if (b.status === 'approved' && b.updatedAt !== b.createdAt) {
+        return { when: formatRelative(b.updatedAt), who: 'you', what: `approved ${b.name} (${room} · ${dates})` };
+      }
+      if (b.status === 'declined' && b.updatedAt !== b.createdAt) {
+        return { when: formatRelative(b.updatedAt), who: 'you', what: `declined ${b.name} (${room} · ${dates})` };
+      }
+      return { when: formatRelative(b.createdAt), who: b.name, what: `submitted a request for the ${room}` };
+    });
+
+  if (items.length === 0) return null;
+
   return (
     <section style={{
       padding: '20px 26px',

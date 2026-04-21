@@ -16,6 +16,8 @@ interface BookingRecord {
   status: BookingStatus;
   why: string;
   travel: string;
+  email: string | null;
+  notes: string | null;
   calendarEventId: string | null;
   createdAt: string;
   updatedAt: string;

@@ -20,12 +20,12 @@
 
 ### 1.1 Bookings Enhancements
 
-- [ ] **DELETE booking endpoint** — `DELETE /api/admin/bookings/[id]` does not exist. Admin can't delete spam/test bookings.
-- [ ] **Search/sort** — No search input in admin panel. Add search by guest name, ref code, or reason text.
+- [x] **DELETE booking endpoint** — `DELETE /api/admin/bookings/[id]` does not exist. Admin can't delete spam/test bookings.
+- [x] **Search/sort** — No search input in admin panel. Add search by guest name, ref code, or reason text.
 - [x] **Approval/decline emails** — PATCH endpoint updates status but never calls `sendApprovalEmail()` / `sendDeclineEmail()` from `lib/email.ts`. Wire these up.
-- [ ] **Bulk actions** — Checkbox select on booking rows + "Approve all" / "Decline all" / "Delete all" action bar. Calls PATCH/DELETE in a batch loop. Useful when multiple pending requests come in.
-- [ ] **Admin notes per booking** — Add `notes` text column to `bookings` table (nullable). Admin can jot down private notes ("bringing a dog", "needs parking info"). Editable in the detail sidebar. Not visible to guests.
-- [ ] **Overlap warning on approve** — When clicking "Approve", check if the booking overlaps with any other approved booking for the same room. Show a warning modal: "This overlaps with [Guest] on [dates]. Approve anyway?" before proceeding.
+- [x] **Bulk actions** — Checkbox select on booking rows + "Approve all" / "Decline all" / "Delete all" action bar. Calls PATCH/DELETE in a batch loop. Useful when multiple pending requests come in.
+- [x] **Admin notes per booking** — Add `notes` text column to `bookings` table (nullable). Admin can jot down private notes ("bringing a dog", "needs parking info"). Editable in the detail sidebar. Not visible to guests.
+- [x] **Overlap warning on approve** — When clicking "Approve", check if the booking overlaps with any other approved booking for the same room. Show a warning modal: "This overlaps with [Guest] on [dates]. Approve anyway?" before proceeding.
 - [x] **Guest email not collected** — Booking form never asks for email. The `email` column exists in schema but is always null. Add optional email field to form + `/api/book`.
 
 ### 1.2 Stats & Analytics
@@ -36,18 +36,18 @@
 
 ### 1.3 Activity Feed
 
-- [ ] **Make activity feed dynamic** — `ActivityStrip` renders hardcoded data. Derive from real bookings (sort by createdAt/updatedAt, show recent submissions and status changes).
+- [x] **Make activity feed dynamic** — `ActivityStrip` renders hardcoded data. Derive from real bookings (sort by createdAt/updatedAt, show recent submissions and status changes).
 
 ### 1.4 Invite Code Management
 
-- [ ] **Delete/revoke invite codes** — No way to invalidate an unredeemed code. Add `DELETE /api/admin/invites/[id]` + "Revoke" button in UI.
-- [ ] **Copy full invite URL** — Currently copies just the code. Copy `https://visit.davinyoung.com?code=ABCDEF` instead.
+- [x] **Delete/revoke invite codes** — No way to invalidate an unredeemed code. Add `DELETE /api/admin/invites/[id]` + "Revoke" button in UI.
+- [x] **Copy full invite URL** — Currently copies just the code. Copy `https://visit.davinyoung.com?code=ABCDEF` instead.
 
 ### 1.5 Admin Session & UX
 
-- [ ] **Logout endpoint** — No way to sign out. Create `POST /api/auth/logout` that destroys session + add logout button to admin header.
-- [ ] **Display admin email** — `adminEmail` is passed as prop but never rendered. Show it in the header.
-- [ ] **Session expiry handling** — If admin session expires mid-use, API calls silently fail with 401. Detect 401 responses in `fetchBookings`/`fetchCodes` and redirect to `/login?auth_error=session_expired` with a "Session expired, please sign in again" message.
+- [x] **Logout endpoint** — No way to sign out. Create `POST /api/auth/logout` that destroys session + add logout button to admin header.
+- [x] **Display admin email** — `adminEmail` is passed as prop but never rendered. Show it in the header.
+- [x] **Session expiry handling** — If admin session expires mid-use, API calls silently fail with 401. Detect 401 responses in `fetchBookings`/`fetchCodes` and redirect to `/login?auth_error=session_expired` with a "Session expired, please sign in again" message.
 
 ### 1.6 Guest Booking Lookup
 
