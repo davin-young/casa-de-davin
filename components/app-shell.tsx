@@ -184,7 +184,7 @@ export default function App() {
       background: paperBg,
     } as CSSProperties}>
       {/* Site nav */}
-      <nav style={{
+      <nav data-m="nav" style={{
         maxWidth: 1120,
         margin: '0 auto',
         padding: '18px 40px 14px',
@@ -215,7 +215,7 @@ export default function App() {
             }}>Casa de Davin</span>
           </button>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 24, fontSize: 13, color: 'var(--ink-soft, #6b7a5e)' }}>
+          <div data-m="nav-pills" style={{ display: 'flex', alignItems: 'center', gap: 24, fontSize: 13, color: 'var(--ink-soft, #6b7a5e)' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ width: 8, height: 8, borderRadius: 8, background: 'var(--moss)', boxShadow: '0 0 0 3px rgba(90,125,58,0.18)' }}/>
               Accepting guests
@@ -228,7 +228,7 @@ export default function App() {
           </div>
         </div>
 
-        <div style={{
+        <div data-m="nav-items" style={{
           display: 'flex',
           alignItems: 'center',
           gap: 6,

@@ -180,9 +180,10 @@ interface UnderlineInputProps {
   type?: string;
   name?: string;
   style?: React.CSSProperties;
+  required?: boolean;
 }
 
-export function UnderlineInput({ label, placeholder, value, onChange, handwrittenLabel, hint, type = 'text', name, style = {} }: UnderlineInputProps) {
+export function UnderlineInput({ label, placeholder, value, onChange, handwrittenLabel, hint, type = 'text', name, style = {}, required }: UnderlineInputProps) {
   const [focus, setFocus] = useState(false);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, ...style }}>
@@ -211,6 +212,7 @@ export function UnderlineInput({ label, placeholder, value, onChange, handwritte
         onChange={onChange}
         onFocus={() => setFocus(true)}
         onBlur={() => setFocus(false)}
+        required={required}
         style={{
           fontFamily: 'var(--serif)',
           fontSize: 22,

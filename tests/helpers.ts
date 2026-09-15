@@ -38,5 +38,6 @@ export function validBookingBody(): Record<string, string> {
     depart: '2026-07-04',
     why: 'Testing the system with a valid reason.',
     travel: 'Driving',
+    email: 'test@example.com',
   };
 }

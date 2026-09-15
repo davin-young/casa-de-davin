@@ -105,3 +105,47 @@ html, body {
   font-weight: 500;
   letter-spacing: -0.02em;
 }
+
+/* ── Mobile responsive overrides ── */
+@media (max-width: 640px) {
+  /* Nav: hide status pills, reduce padding */
+  nav > div:first-child > div:last-child { display: none !important; }
+  nav { padding: 14px 16px 10px !important; }
+  nav > div:nth-child(2) { margin-top: 8px !important; }
+
+  /* Hero: stack vertically */
+  [data-m="hero-flex"] { flex-direction: column !important; gap: 20px !important; }
+  [data-m="hero-sub"] { max-width: 100% !important; text-align: left !important; align-self: flex-start !important; }
+  [data-m="hero-wrap"] { padding: 28px 20px 36px !important; }
+  [data-m="hero-pills"] { flex-wrap: wrap !important; }
+
+  /* Room grid: single column */
+  [data-m="room-grid"] { grid-template-columns: 1fr !important; gap: 24px !important; }
+
+  /* House rules: 2 columns */
+  [data-m="rules-grid"] { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+  [data-m="rules"] { padding: 20px 18px !important; }
+  [data-m="rules-hdr"] { flex-direction: column !important; gap: 4px !important; }
+
+  /* Hosting strip: stack vertically */
+  [data-m="hosting"] { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; padding: 18px 20px !important; }
+
+  /* Landing content area: reduce padding */
+  [data-m="landing"] { padding: 0 18px !important; }
+  [data-m="inv-hdr"] { flex-direction: column !important; gap: 4px !important; align-items: flex-start !important; }
+
+  /* About: stack hero, single-col facts */
+  [data-m="about-content"] { padding: 8px 18px 32px !important; }
+  [data-m="about-hero"] { grid-template-columns: 1fr !important; gap: 24px !important; }
+  [data-m="about-facts"] { grid-template-columns: 1fr !important; gap: 16px !important; }
+
+  /* Guestbook: single-col cards */
+  [data-m="gb-content"] { padding: 8px 18px 32px !important; }
+  [data-m="guest-grid"] { grid-template-columns: 1fr !important; gap: 20px !important; }
+
+  /* Form: stack sidebar below */
+  [data-m="form-grid"] { grid-template-columns: 1fr !important; gap: 24px !important; padding: 16px 18px 32px !important; }
+  [data-m="form-side"] { order: -1; }
+  [data-m="form-hdr"] h1 { font-size: 36px !important; }
+  [data-m="form-top"] { padding: 10px 16px !important; }
+}
