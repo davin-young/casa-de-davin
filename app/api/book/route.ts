@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { bookings, blackoutDates } from '@/db/schema';
 import { createBookingEvent } from '@/lib/google-calendar';
-import { sendBookingNotification } from '@/lib/email';
+import { sendBookingNotification, sendGuestReceipt } from '@/lib/email';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { eq, and, lt, gt, or, isNull } from 'drizzle-orm';
 
@@ -14,7 +14,7 @@ interface BookingRequest {
   why: string;
   travel: string;
   activities: string;
-  email?: string;
+  email: string;
 }
 
 interface BookingResponse {
@@ -76,13 +76,15 @@ export async function POST(request: NextRequest): Promise<NextResponse<BookingRe
   if (!why || typeof why !== 'string' || why.trim().length === 0) {
     return NextResponse.json({ ok: false as const, error: 'Tell me why you want to stay.' }, { status: 400 });
   }
+  if (!email || typeof email !== 'string' || email.trim().length === 0) {
+    return NextResponse.json({ ok: false as const, error: 'Email is required — how else will I judge you in writing?' }, { status: 400 });
+  }
 
   const ref = generateRef();
 
   try {
-    // Validate email if provided
-    const trimmedEmail = email?.trim() || null;
-    if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+    const trimmedEmail = email.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
       return NextResponse.json({ ok: false as const, error: 'Invalid email address.' }, { status: 400 });
     }
 
@@ -157,8 +159,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<BookingRe
       console.error('Calendar sync failed (non-fatal):', calErr instanceof Error ? calErr.message : calErr);
     }
 
-    // Send notification email
-    await sendBookingNotification({
+    // Send notification email to host
+    const emailData = {
       name: name.trim(),
       room,
       arrive,
@@ -167,8 +169,16 @@ export async function POST(request: NextRequest): Promise<NextResponse<BookingRe
       travel: (travel || '').trim(),
       activities: (activities || '').trim(),
       ref,
-    }).catch((emailErr: Error) => {
-      console.error('Email notification failed (non-fatal):', emailErr.message);
+      email: trimmedEmail,
+    };
+
+    await sendBookingNotification(emailData).catch((emailErr: Error) => {
+      console.error('Host notification failed (non-fatal):', emailErr.message);
+    });
+
+    // Send receipt email to guest
+    await sendGuestReceipt(emailData, trimmedEmail).catch((emailErr: Error) => {
+      console.error('Guest receipt failed (non-fatal):', emailErr.message);
     });
 
     return NextResponse.json({ ok: true as const, ref, id: inserted.id });

@@ -104,8 +104,8 @@ export default function Landing({ onPickRoom, heroVariant = 'bold', tone = 'judg
   return (
     <PaperSurface style={{ minHeight: '100%', paddingBottom: 60 }}>
       {heroVariant === 'bold' ? <HeroBold subtitle={subtitle} silly={silly}/> : <HeroIllustrated subtitle={subtitle}/>}
-      <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 40px', position: 'relative' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 22 }}>
+      <div data-m="landing" style={{ maxWidth: 1120, margin: '0 auto', padding: '0 40px', position: 'relative' }}>
+        <div data-m="inv-hdr" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 22 }}>
           <SectionLabel>The inventory</SectionLabel>
           <span className="hand" style={{ fontSize: 22, color: 'var(--umber-soft)' }}>pick your poison ↓</span>
         </div>
@@ -151,11 +151,11 @@ function TopStrip({ silly }: TopStripProps) {
 
 function HeroBold({ subtitle, silly }: HeroBoldProps) {
   return (
-    <div style={{ position: 'relative', maxWidth: 1120, margin: '0 auto', padding: '40px 40px 52px' }}>
+    <div data-m="hero-wrap" style={{ position: 'relative', maxWidth: 1120, margin: '0 auto', padding: '40px 40px 52px' }}>
       <div style={{ position: 'absolute', top: -60, right: 20, pointerEvents: 'none', animation: silly ? 'sun-rays 18s ease-in-out infinite' : 'none', zIndex: 0 }}>
         <SunRayBurst size={440} color="var(--honey)" opacity={0.28}/>
       </div>
-      <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 40 }}>
+      <div data-m="hero-flex" style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 40 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="hand" style={{ fontSize: 26, color: 'var(--umber)', marginBottom: 10, transform: 'rotate(-1.5deg)', display: 'inline-block' }}>
             welcome, traveler ·
@@ -195,7 +195,7 @@ function HeroBold({ subtitle, silly }: HeroBoldProps) {
               <span style={{ marginTop: 6 }}>yes that&apos;s a real name</span>
             </div>
           )}
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center', fontSize: 13, color: 'var(--ink-soft)', opacity: 0.8 }}>
+          <div data-m="hero-pills" style={{ display: 'flex', gap: 12, alignItems: 'center', fontSize: 13, color: 'var(--ink-soft)', opacity: 0.8 }}>
             <MetaPill label="2 rooms" icon={<HouseGlyph size={14}/>}/>
             <MetaPill label="Plants (many, thriving)"/>
             <MetaPill label="Occasional pancakes"/>
@@ -203,7 +203,7 @@ function HeroBold({ subtitle, silly }: HeroBoldProps) {
           </div>
         </div>
 
-        <div style={{ maxWidth: 340, textAlign: 'right', flexShrink: 0, alignSelf: 'center' }}>
+        <div data-m="hero-sub" style={{ maxWidth: 340, textAlign: 'right', flexShrink: 0, alignSelf: 'center' }}>
           <p style={{
             fontFamily: 'var(--serif)',
             fontSize: 22,
@@ -298,7 +298,7 @@ function MetaPill({ label, icon }: MetaPillProps) {
 
 function RoomGrid({ onPickRoom, tone, silly }: RoomGridProps) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 32, marginBottom: 56 }}>
+    <div data-m="room-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 32, marginBottom: 56 }}>
       <RoomCard
         id="couch"
         name="The Couch"
@@ -823,7 +823,7 @@ function HouseRules({ silly }: HouseRulesProps) {
     { label: 'Wi-Fi', text: "Password is on the fridge. It's a pun. Sorry." },
   ];
   return (
-    <section style={{
+    <section data-m="rules" style={{
       background: 'var(--oat-deep)',
       border: '1px dashed var(--umber-soft)',
       borderRadius: '20px 8px 20px 8px',
@@ -832,13 +832,13 @@ function HouseRules({ silly }: HouseRulesProps) {
       position: 'relative',
     }}>
       {silly && <WaxSeal text="Inspected · approved" top={-18} right={30} rotate={10}/>}
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginBottom: 18 }}>
+      <div data-m="rules-hdr" style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginBottom: 18 }}>
         <h3 className="serif-display" style={{ fontSize: 28, margin: 0, color: 'var(--ink)', fontWeight: 500 }}>
           House rules, loosely enforced
         </h3>
         <span className="hand" style={{ fontSize: 22, color: 'var(--umber-soft)' }}>(mostly vibes)</span>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 22 }}>
+      <div data-m="rules-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 22 }}>
         {rules.map((r, i) => (
           <div key={i} style={{
             padding: '14px 16px',
@@ -865,7 +865,7 @@ function HouseRules({ silly }: HouseRulesProps) {
 
 function HostingStrip({ silly }: HostingStripProps) {
   return (
-    <section style={{
+    <section data-m="hosting" style={{
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',

@@ -234,9 +234,9 @@ export function AboutPage({ onBack }: AboutPageProps) {
         </button>
       </div>
 
-      <div style={{ maxWidth: 980, margin: '0 auto', padding: '8px 40px 40px' }}>
+      <div data-m="about-content" style={{ maxWidth: 980, margin: '0 auto', padding: '8px 40px 40px' }}>
         <SectionLabel>About your host</SectionLabel>
-        <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: 48, marginTop: 16, alignItems: 'flex-start' }}>
+        <div data-m="about-hero" style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: 48, marginTop: 16, alignItems: 'flex-start' }}>
           <div>
             <h1 className="serif-display" style={{ fontSize: 80, lineHeight: 0.96, margin: '0 0 16px', letterSpacing: '-0.03em', fontWeight: 500 }}>
               Hi, I&apos;m <span style={{ fontStyle: 'italic', color: 'var(--umber)' }}>Davin.</span>
@@ -276,7 +276,7 @@ export function AboutPage({ onBack }: AboutPageProps) {
 
         <SprigDivider/>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 28, marginTop: 28 }}>
+        <div data-m="about-facts" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 28, marginTop: 28 }}>
           <FactBlock title="Location" big="Denver-ish, CO" sub="LoDo. Walk to coffee. Drive to mountains."/>
           <FactBlock title="Hosting since" big="2026" sub="Back when 'hosting' meant 'forgot you were coming, but sure.'"/>
           <FactBlock title="Stays to date" big={stayCount !== null ? String(stayCount) : '...'} sub="Zero have ended in estrangement. Close calls: two."/>
@@ -432,7 +432,7 @@ export function Guestbook({ onBack }: GuestbookProps) {
         </button>
       </div>
 
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '8px 40px 40px' }}>
+      <div data-m="gb-content" style={{ maxWidth: 1100, margin: '0 auto', padding: '8px 40px 40px' }}>
         <SectionLabel>The guestbook</SectionLabel>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 20, flexWrap: 'wrap', marginTop: 10, marginBottom: 26 }}>
           <h1 className="serif-display" style={{ fontSize: 76, lineHeight: 0.96, margin: 0, letterSpacing: '-0.03em', fontWeight: 500 }}>
@@ -486,7 +486,7 @@ export function Guestbook({ onBack }: GuestbookProps) {
               : 'Nothing for this filter.'}
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '30px 24px' }}>
+          <div data-m="guest-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '30px 24px' }}>
             {filtered.map((e, i) => (
               <GuestCard key={e.id} entry={e} rot={ROTS[i % ROTS.length]}/>
             ))}

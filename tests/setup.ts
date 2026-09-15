@@ -16,8 +16,15 @@ vi.mock('@/lib/session', () => ({
 // Mock email
 vi.mock('@/lib/email', () => ({
   sendBookingNotification: vi.fn().mockResolvedValue(undefined),
+  sendGuestReceipt: vi.fn().mockResolvedValue(undefined),
   sendApprovalEmail: vi.fn().mockResolvedValue(undefined),
   sendDeclineEmail: vi.fn().mockResolvedValue(undefined),
+  sendCancellationEmail: vi.fn().mockResolvedValue(undefined),
+  sendGuestPreArrival: vi.fn().mockResolvedValue(undefined),
+  sendHostPreArrival: vi.fn().mockResolvedValue(undefined),
+  sendGuestPostStay: vi.fn().mockResolvedValue(undefined),
+  sendHostPostStay: vi.fn().mockResolvedValue(undefined),
+  sendHostNudge: vi.fn().mockResolvedValue(undefined),
 }));
 
 // Mock Google Calendar
@@ -60,9 +67,41 @@ vi.mock('@/db/schema', () => ({
     status: 'status',
     why: 'why',
     travel: 'travel',
+    activities: 'activities',
+    email: 'email',
+    notes: 'notes',
     calendarEventId: 'calendar_event_id',
     createdAt: 'created_at',
     updatedAt: 'updated_at',
+  },
+  blackoutDates: {
+    id: 'id',
+    startDate: 'start_date',
+    endDate: 'end_date',
+    label: 'label',
+    room: 'room',
+    createdAt: 'created_at',
+  },
+  inviteCodes: {
+    id: 'id',
+    code: 'code',
+    note: 'note',
+    createdAt: 'created_at',
+    redeemedAt: 'redeemed_at',
+    redeemedBy: 'redeemed_by',
+  },
+  guestbookEntries: {
+    id: 'id',
+    bookingRef: 'booking_ref',
+    guestName: 'guest_name',
+    room: 'room',
+    rating: 'rating',
+    title: 'title',
+    body: 'body',
+    signoff: 'signoff',
+    imageUrls: 'image_urls',
+    status: 'status',
+    createdAt: 'created_at',
   },
 }));
 

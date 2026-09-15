@@ -117,7 +117,7 @@ export default function BookingForm({ room, onBack, onSubmit, silly = false }: B
     setDateWarning(validate(r));
   };
 
-  const canSubmit = name.trim().length > 0 && range.start && range.end && why.trim().length > 0;
+  const canSubmit = name.trim().length > 0 && email.trim().length > 0 && range.start && range.end && why.trim().length > 0;
 
   const doSubmit = async (): Promise<void> => {
     if (!canSubmit || !range.start || !range.end) return;
@@ -161,7 +161,7 @@ export default function BookingForm({ room, onBack, onSubmit, silly = false }: B
 
   return (
     <PaperSurface style={{ minHeight: '100%', animation: 'fade-up 480ms ease-out', paddingBottom: 60 }}>
-      <div style={{
+      <div data-m="form-top" style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         padding: '22px 40px 10px',
         maxWidth: 1040, margin: '0 auto',
@@ -184,9 +184,9 @@ export default function BookingForm({ room, onBack, onSubmit, silly = false }: B
         </div>
       </div>
 
-      <div style={{ maxWidth: 1040, margin: '0 auto', padding: '16px 40px 40px', display: 'grid', gridTemplateColumns: '1fr 380px', gap: 48 }}>
+      <div data-m="form-grid" style={{ maxWidth: 1040, margin: '0 auto', padding: '16px 40px 40px', display: 'grid', gridTemplateColumns: '1fr 380px', gap: 48 }}>
         <div>
-          <div style={{ marginBottom: 28 }}>
+          <div data-m="form-hdr" style={{ marginBottom: 28 }}>
             <SectionLabel>Booking slip no. 0042</SectionLabel>
             <h1 className="serif-display" style={{
               fontSize: 56, lineHeight: 1.02, margin: '10px 0 10px',
@@ -209,11 +209,12 @@ export default function BookingForm({ room, onBack, onSubmit, silly = false }: B
             />
 
             <UnderlineInput
-              label="Email (optional)"
+              label="Email"
               placeholder="you@wherever.com"
               value={email}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
-              hint="Only so I can let you know if you're in. I won't spam you. I barely email people I like."
+              hint="So I can let you know if you're in. I won't spam you. I barely email people I like."
+              required
             />
 
             <div>
@@ -287,7 +288,7 @@ export default function BookingForm({ room, onBack, onSubmit, silly = false }: B
           </div>
         </div>
 
-        <aside style={{ position: 'sticky', top: 20, alignSelf: 'flex-start' }}>
+        <aside data-m="form-side" style={{ position: 'sticky', top: 20, alignSelf: 'flex-start' }}>
           <div style={{
             background: 'var(--linen)',
             border: '1.5px solid var(--umber-soft)',
